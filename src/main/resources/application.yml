@@ -10,10 +10,14 @@ spring:
       ddl-auto: create
     properties:
       hibernate:
-        #       show_sql: true
         format_sql: true
         use_sql_comments: true
 
-logging.level:
-  org.hibernate.SQL: debug
-  org.hibernate.type: trace
+logging:
+  level:
+    org.hibernate.SQL: debug
+    org.hibernate.type: trace
+
+jwt:
+  secret: my-super-secret-key-my-super-secret-key-123456
+  expiration: 3600000
