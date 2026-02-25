@@ -5,6 +5,8 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -24,6 +26,12 @@ public class Member extends BaseTimeEntity {
     private Role role;
 
     private String nickname;
+
+    @OneToMany(mappedBy = "member")
+    private List<Trade> trades;
+
+    @OneToMany(mappedBy = "member")
+    private List<Strategy> strategies;
 
     public Member(String email, String password, Role role, String nickname) {
         this.email = email;
