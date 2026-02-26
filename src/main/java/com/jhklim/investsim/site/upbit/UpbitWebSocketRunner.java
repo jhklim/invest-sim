@@ -1,9 +1,14 @@
 package com.jhklim.investsim.site.upbit;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jhklim.investsim.domain.Exchange;
+import com.jhklim.investsim.domain.strategy.Strategy;
+import com.jhklim.investsim.dto.ExchangeMarketSearchCond;
+import com.jhklim.investsim.service.StrategyService;
 import com.jhklim.investsim.site.upbit.dto.CandleData;
 import com.jhklim.investsim.site.upbit.dto.TradeTickData;
 import com.jhklim.investsim.site.upbit.service.CandleStore;
+import com.jhklim.investsim.site.upbit.service.StrategyEvaluator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +30,8 @@ public class UpbitWebSocketRunner {
     private final UpbitRestClient upbitRestClient;
     private final CandleStore candleStore;
     private final ObjectMapper objectMapper;
+    private final StrategyEvaluator strategyEvaluator;
+    private final StrategyService strategyService;
 
     private static final String MARKET = "KRW-BTC";
 
@@ -46,7 +53,7 @@ public class UpbitWebSocketRunner {
                 log.info("WebSocket Connected");
 
                 String subscribeMsg = "[" +
-                        "{\"ticket\":\"uuid_\"}," +
+                        "{\"ticket\":\"investsim\"}," +
                         "{\"type\":\"trade\", \"codes\":[\"" + MARKET + "\"]}]";
 
                 send(subscribeMsg);
@@ -60,11 +67,9 @@ public class UpbitWebSocketRunner {
             public void onMessage(ByteBuffer bytes) {
                 String jsonString = StandardCharsets.UTF_8.decode(bytes).toString();
                 try {
-                    // JSON String → Java 객체
+                    // JSON String -> Java 객체
                     TradeTickData tick = objectMapper.readValue(jsonString, TradeTickData.class);
-                    log.info("[{}] 체결가: {} / 수량: {} / {}",
-                            tick.getMarket(), tick.getTradePrice(),
-                            tick.getTradeVolume(), tick.getAskBid());
+                    onTick(tick);
                 } catch (Exception e) {
                     log.error("Parsing Error: {}", jsonString, e);
                 }
@@ -82,5 +87,19 @@ public class UpbitWebSocketRunner {
         };
 
         client.connect();
+    }
+
+    private void onTick(TradeTickData tick) {
+        List<CandleData> candles = candleStore.get(tick.getMarket());
+
+        ExchangeMarketSearchCond condition = new ExchangeMarketSearchCond(Exchange.UPBIT, tick.getMarket());
+        List<Strategy> activeStrategies = strategyService.findActiveStrategiesByMarket(condition);
+
+        for (Strategy strategy : activeStrategies) {
+            TradeSignal signal = strategyEvaluator.evaluate(strategy, candles);
+            log.info("[{}] 전략: {} / 신호: {}", tick.getMarket(), strategy.getName(), signal);
+
+            // TODO: TradeService 연결 (매매 체결)
+        }
     }
 }
