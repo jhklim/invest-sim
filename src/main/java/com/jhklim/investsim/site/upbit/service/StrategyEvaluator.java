@@ -1,6 +1,5 @@
 package com.jhklim.investsim.site.upbit.service;
 
-import ch.qos.logback.core.util.StringUtil;
 import com.jhklim.investsim.domain.PositionStatus;
 import com.jhklim.investsim.domain.Trade;
 import com.jhklim.investsim.domain.strategy.BuyStrategy;
@@ -38,7 +37,6 @@ public class StrategyEvaluator {
         }
 
         return TradeSignal.HOLD;
-
     }
 
     private boolean checkAllBuyConditions(List<BuyStrategy> buyStrategies, List<CandleData> candles) {
@@ -68,5 +66,4 @@ public class StrategyEvaluator {
             case VOLUME -> candles.get(candles.size() - 1).getVolume() >= value;
         };
     }
-
 }
