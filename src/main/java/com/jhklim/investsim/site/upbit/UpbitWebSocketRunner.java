@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jhklim.investsim.domain.Exchange;
 import com.jhklim.investsim.domain.strategy.Strategy;
 import com.jhklim.investsim.dto.ExchangeMarketSearchCond;
+import com.jhklim.investsim.dto.TradeOrderRequest;
 import com.jhklim.investsim.service.StrategyService;
+import com.jhklim.investsim.service.TradeService;
 import com.jhklim.investsim.site.upbit.dto.CandleData;
 import com.jhklim.investsim.site.upbit.dto.TradeTickData;
 import com.jhklim.investsim.site.upbit.service.CandleStore;
@@ -32,6 +34,7 @@ public class UpbitWebSocketRunner {
     private final ObjectMapper objectMapper;
     private final StrategyEvaluator strategyEvaluator;
     private final StrategyService strategyService;
+    private final TradeService tradeService;
 
     private static final String MARKET = "KRW-BTC";
 
@@ -99,7 +102,13 @@ public class UpbitWebSocketRunner {
             TradeSignal signal = strategyEvaluator.evaluate(strategy, candles);
             log.info("[{}] 전략: {} / 신호: {}", tick.getMarket(), strategy.getName(), signal);
 
-            // TODO: TradeService 연결 (매매 체결)
+            TradeOrderRequest order = new TradeOrderRequest(tick.getTradePrice(), calculateQuantity(strategy, tick.getTradePrice()));
+
+            if (signal == TradeSignal.BUY) tradeService.buy(strategy, order);
         }
+    }
+
+    private double calculateQuantity(Strategy strategy, double tradePrice) {
+        return strategy.getBuyAmount()/tradePrice;
     }
 }
