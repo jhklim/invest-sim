@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -29,10 +30,10 @@ public class Member extends BaseTimeEntity {
     private String nickname;
 
     @OneToMany(mappedBy = "member")
-    private List<Trade> trades;
+    private List<Trade> trades = new ArrayList<>();
 
     @OneToMany(mappedBy = "member")
-    private List<Strategy> strategies;
+    private List<Strategy> strategies = new ArrayList<>();
 
     public Member(String email, String password, Role role, String nickname) {
         this.email = email;
