@@ -1,5 +1,6 @@
 package com.jhklim.investsim.domain;
 
+import com.jhklim.investsim.domain.strategy.Strategy;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -31,7 +32,7 @@ public class Trade extends BaseTimeEntity {
     private Strategy strategy;
 
     @Enumerated(STRING)
-    private PositionStatus positionStatus; // [OPEN, HOLD, CLOSE]
+    private PositionStatus positionStatus; // [OPEN, CLOSE]
 
 
     public double getTotalOpenPrice() {

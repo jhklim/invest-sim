@@ -1,5 +1,6 @@
 package com.jhklim.investsim.domain;
 
+import com.jhklim.investsim.domain.strategy.Strategy;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
