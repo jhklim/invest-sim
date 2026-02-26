@@ -14,9 +14,4 @@ public class InvestsimApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(InvestsimApplication.class, args);
 	}
-
-	@Bean
-	JPAQueryFactory jpaQueryFactory(EntityManager em) {
-		return new JPAQueryFactory(em);
-	}
 }
