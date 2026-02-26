@@ -40,6 +40,8 @@ public class Strategy {
     @OneToOne(mappedBy = "strategy")
     private Trade trade;
 
+    private Double buyAmount;
+
     @BatchSize(size = 100)
     @OneToMany(mappedBy = "strategy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<BuyStrategy> buyStrategies = new ArrayList<>();
