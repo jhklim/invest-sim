@@ -1,13 +1,18 @@
 package com.jhklim.investsim.domain.strategy;
 
+import com.jhklim.investsim.domain.Exchange;
 import com.jhklim.investsim.domain.Member;
 import com.jhklim.investsim.domain.Trade;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.BatchSize;
 
+import java.util.ArrayList;
 import java.util.List;
+
+import static jakarta.persistence.EnumType.*;
 
 @Entity
 @Getter
@@ -27,12 +32,19 @@ public class Strategy {
 
     private boolean isActive;
 
+    @Enumerated(STRING)
+    private Exchange exchange;
+
+    private String market;
+
     @OneToOne(mappedBy = "strategy")
     private Trade trade;
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "strategy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<BuyStrategy> buyStrategies;
+    private List<BuyStrategy> buyStrategies = new ArrayList<>();
 
+    @BatchSize(size = 100)
     @OneToMany(mappedBy = "strategy", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<SellStrategy> sellStrategies;
+    private List<SellStrategy> sellStrategies = new ArrayList<>();
 }
