@@ -35,6 +35,22 @@ public class Member extends BaseTimeEntity {
     @OneToMany(mappedBy = "member")
     private List<Strategy> strategies = new ArrayList<>();
 
+    @Version
+    private int version; // 낙관적 락
+
+    private double balance;
+
+    public void addBalance(double amount) {
+        this.balance += amount;
+    }
+
+    public void deductBalance(double amount) {
+        if (this.balance < amount) {
+            throw new IllegalStateException("잔고 부족");
+        }
+        this.balance -= amount;
+    }
+
     public Member(String email, String password, Role role, String nickname) {
         this.email = email;
         this.password = password;
