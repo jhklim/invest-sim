@@ -1,6 +1,7 @@
 package com.jhklim.investsim.domain;
 
 import com.jhklim.investsim.domain.strategy.Strategy;
+import com.jhklim.investsim.dto.TradeOrderRequest;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -22,8 +23,6 @@ public class Trade extends BaseTimeEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    private String symbol;
-
     private double openPrice;
     private double openQuantity;
 
@@ -34,9 +33,16 @@ public class Trade extends BaseTimeEntity {
     @Enumerated(STRING)
     private PositionStatus positionStatus; // [OPEN, CLOSE]
 
-
     public double getTotalOpenPrice() {
         return this.getOpenPrice() * getOpenQuantity();
+    }
+
+    public Trade(Member member, Strategy strategy, TradeOrderRequest order) {
+        this.member = member;
+        this.strategy = strategy;
+        this.openPrice = order.getPrice();
+        this.openQuantity = order.getQuantity();
+        this.positionStatus = PositionStatus.OPEN;
     }
 
 }
