@@ -34,10 +34,10 @@ class StrategyServiceTest {
     @DisplayName("전략 활성시 시 잔고 차감 후 DB에 반영")
     public void activate_persistsToDatabase() {
         // given
-        Member member = new Member("test@gmail.com", "1234", Role.USER, "tester", 1000000);
+        Member member = new Member("test@gmail.com", "1234", Role.USER, "tester", 100000);
         memberRepository.save(member);
 
-        Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", 500000.0);
+        Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", 50000.0);
         strategy.getBuyStrategies().add(new BuyStrategy(strategy, Indicator.RSI, 30));
         strategyRepository.save(strategy);
 
@@ -45,7 +45,47 @@ class StrategyServiceTest {
         strategyService.activate(strategy.getId());
 
         // then
-        assertThat(member.getBalance()).isEqualTo(500000);
+        assertThat(member.getBalance()).isEqualTo(50000);
         assertThat(strategy.isActive()).isTrue();
+    }
+
+    @Test
+    @DisplayName("잔고 부족 시 전략 활성화에 실패하고 잔고는 유지")
+    public void activate_rollbackWhenInsufficientBalance() {
+        // given
+        Member member = new Member("test2@gmail.com", "1234", Role.USER, "tester2", 100000);
+        memberRepository.save(member);
+
+        Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", 500000.0);
+        strategyRepository.save(strategy);
+
+        // when
+        assertThatThrownBy(() -> strategyService.activate(strategy.getId()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("잔고 부족");
+
+        // then
+        assertThat(member.getBalance()).isEqualTo(100000);
+        assertThat(strategy.isActive()).isFalse();
+    }
+
+    @Test
+    @DisplayName("매수 체결 전 전략 비활성화 시 투자금액이 전액 환불")
+    public void deactivate_refundsBuyAmountBeforeTradeOpen() {
+        // given
+        Member member = new Member("test3@gmail.com", "1234", Role.USER, "tester3", 100000);
+        memberRepository.save(member);
+
+        Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", 50000.0);
+        strategyRepository.save(strategy);
+
+        strategyService.activate(strategy.getId());
+
+        // when
+        strategyService.deactivate(strategy.getId());
+
+        // then
+        assertThat(member.getBalance()).isEqualTo(100000);
+        assertThat(strategy.isActive()).isFalse();
     }
 }
