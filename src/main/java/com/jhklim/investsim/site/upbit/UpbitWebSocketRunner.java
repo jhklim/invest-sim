@@ -10,6 +10,7 @@ import com.jhklim.investsim.service.TradeService;
 import com.jhklim.investsim.site.upbit.dto.CandleData;
 import com.jhklim.investsim.site.upbit.dto.TradeTickData;
 import com.jhklim.investsim.site.upbit.service.CandleStore;
+import com.jhklim.investsim.site.upbit.service.CurrentPriceStore;
 import com.jhklim.investsim.site.upbit.service.StrategyEvaluator;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class UpbitWebSocketRunner {
     private final StrategyEvaluator strategyEvaluator;
     private final StrategyService strategyService;
     private final TradeService tradeService;
+    private final CurrentPriceStore currentPriceStore;
 
     private static final String MARKET = "KRW-BTC";
 
@@ -93,6 +95,7 @@ public class UpbitWebSocketRunner {
     }
 
     private void onTick(TradeTickData tick) {
+        currentPriceStore.update(tick.getMarket(), tick.getTradePrice());
         List<CandleData> candles = candleStore.get(tick.getMarket());
 
         ExchangeMarketSearchCond condition = new ExchangeMarketSearchCond(Exchange.UPBIT, tick.getMarket());
@@ -105,6 +108,7 @@ public class UpbitWebSocketRunner {
             TradeOrderRequest order = new TradeOrderRequest(tick.getTradePrice(), calculateQuantity(strategy, tick.getTradePrice()));
 
             if (signal == TradeSignal.BUY) tradeService.buy(strategy, order);
+            // TODO: sell
         }
     }
 
