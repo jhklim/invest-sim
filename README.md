@@ -15,6 +15,7 @@
 - [프로젝트 개요](#-프로젝트-개요)
 - [기술 스택](#-기술-스택)
 - [시스템 아키텍처](#-시스템-아키텍처)
+- [핵심 설계 포인트](#-핵심-설계-포인트)
 - [주요 기능](#-주요-기능)
 - [진행 현황](#-진행-현황)
 
@@ -55,15 +56,49 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 시세 데이터를 WebSock
 
 ```
 [ Client ]
-    ↓ HTTP
-[ API Gateway ]
+    ↓ HTTP REST API
+[ Controller Layer ]
     ↓
-[ Service ]
-    ↑
-[ Upbit WebSocket / REST API ]
+[ Service Layer ]
+    ↓                        ↑
+[ Repository Layer ]   [ Upbit WebSocket / REST API ]
+    ↓                        ↓
+[ MySQL (Docker) ]     [ In-Memory Store (CandleStore, CurrentPriceStore) ]
 ```
 
-> 각 서비스는 독립된 DB를 소유하며, 서비스 간 통신은 ID 참조 + OpenFeign(HTTP) 방식으로 처리합니다.
+---
+
+## 💡 핵심 설계 포인트
+
+### 1. N+1 문제 해결 — @BatchSize
+전략 목록 조회 시 `BuyStrategy`, `SellStrategy` 컬렉션을 `@BatchSize`로 처리해 N+1 문제를 해결했습니다.
+컬렉션 2개를 동시에 fetch join하면 발생하는 `MultipleBagFetchException`을 피하면서도 쿼리 수를 최소화했습니다.
+
+### 2. QueryDSL 동적 쿼리
+거래소(`Exchange`)와 마켓(`market`) 조건을 `BooleanExpression`으로 조합하는 동적 쿼리를 구현했습니다.
+조건이 null이면 자동으로 해당 조건을 제외해 유연한 검색이 가능합니다.
+
+```java
+private BooleanExpression exchangeEq(Exchange exchange) {
+    return exchange != null ? strategy.exchange.eq(exchange) : null;
+}
+```
+
+### 3. 낙관적 락 (Optimistic Lock)
+동시에 여러 전략이 같은 멤버의 잔고를 차감하려 할 때 `@Version`으로 충돌을 감지하고
+`ObjectOptimisticLockingFailureException`을 처리해 데이터 정합성을 보장합니다.
+
+### 4. In-Memory 실시간 데이터 처리
+캔들 데이터와 현재가를 DB 대신 `ConcurrentHashMap` 기반 메모리 저장소에 유지합니다.
+매매 조건 충족 시에만 DB에 기록해 불필요한 I/O를 최소화했습니다.
+
+### 5. 단일 책임 원칙 (SRP) 적용
+| 클래스 | 역할 |
+|--------|------|
+| `UpbitWebSocketRunner` | 실시간 데이터 수신만 담당 |
+| `IndicatorCalculator` | RSI/MA 보조지표 계산만 담당 |
+| `StrategyEvaluator` | 전략 조건 체크만 담당 |
+| `TradeService` | 모의 매매 체결 + DB 저장만 담당 |
 
 ---
 
@@ -72,44 +107,53 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 시세 데이터를 WebSock
 ### 1. 회원 인증
 - JWT 기반 로그인/회원가입
 - Spring Security 필터 체인 구성
+- 모의 잔고 관리 (충전/차감/환불)
 
 ### 2. 실시간 시세 수신
 - 업비트 WebSocket 연동 (체결가, 호가 실시간 수신)
-- 업비트 REST API로 캔들 데이터 주기적 수집 (`@Scheduled`)
-- 캔들 기반 보조지표 계산 (RSI, MA)
+- 프로그램 시작 시 REST API로 초기 캔들 50개 적재
+- 이후 WebSocket 체결가로 캔들 실시간 업데이트
 
-### 3. 전략 관리 (CRUD)
-- MA 교차 전략: 단기/장기 이동평균선 교차 시 매수/매도
-- RSI 전략: 설정한 과매수/과매도 기준값 기반 매매
-- 사용자가 직접 파라미터 설정 (기간, 임계값 등)
+### 3. 보조지표 계산
+- RSI (지수 이동평균 방식, 업비트 기준 공식 적용)
+- 거래량(VOLUME) 조건 지원
+- 추후 MA 교차 전략 확장 예정
 
-### 4. 모의 자동매매 실행
-- 전략 조건 충족 시 자동 매수/매도 실행
-- 체결 시점 가격 스냅샷 저장
+### 4. 전략 관리
+- 사용자가 매수/매도 조건을 직접 설정 (RSI 기준값, 거래량 기준값 등)
+- 매수/매도 조건 각각 여러 개 조합 가능 (AND 조건)
+- 전략 활성화 시 투자 금액 잔고에서 선차감 (묶기)
+- 전략 비활성화 시 매수 전이면 전액 환불, 매수 후면 현재가로 수익금 환불
 
-### 5. 포트폴리오 / 수익률 조회
-- 보유 코인 현황 및 평균매수가 조회
-- 전략별 수익률 비교
-- 거래 히스토리 QueryDSL 동적 필터링
+### 5. 모의 자동매매 실행
+- 전략 조건 충족 시 자동 매수 실행
+- 체결 가격/수량/수익률 DB 저장
+- 낙관적 락으로 동시 매수 충돌 방지
 
 ---
 
 ## ✅ 진행 현황
 
-| 기능 | 상태      |
-|------|---------|
-| 프로젝트 구조 설계 (멀티모듈) | ✅ 완료    |
-| DB 설계 (ERD) | ✅ 완료    |
-| Member Entity 설계 | ✅ 완료    |
-| Strategy / Trade Entity 설계 | ✅ 완료    |
-| Upbit WebSocket 연동 | 🔄 진행 중 |
-| 캔들 데이터 수집 REST API | 🔄 진행 중 |
-| JWT 인증 | ✅ 예정    |
-| 전략 CRUD API | ⬜ 예정    |
-| 보조지표 계산 (RSI, MA) | ⬜ 예정    |
-| 모의 매매 실행 엔진 | ⬜ 예정    |
-| 포트폴리오 / 수익률 조회 | ⬜ 예정    |
-| Swagger 문서화 | ⬜ 예정    |
+| 기능 | 상태 |
+|------|------|
+| DB 설계 (ERD) | ✅ 완료 |
+| Member Entity + 잔고/낙관적 락 | ✅ 완료 |
+| Strategy / BuyStrategy / SellStrategy Entity | ✅ 완료 |
+| Trade Entity (수익률 기록 포함) | ✅ 완료 |
+| Upbit WebSocket 연동 | ✅ 완료 |
+| 초기 캔들 REST API 수집 | ✅ 완료 |
+| In-Memory CandleStore / CurrentPriceStore | ✅ 완료 |
+| RSI 보조지표 계산 (EMA 방식) | ✅ 완료 |
+| StrategyEvaluator (전략 조건 체크) | ✅ 완료 |
+| QueryDSL 동적 쿼리 (전략 조회) | ✅ 완료 |
+| TradeService (모의 매수) | ✅ 완료 |
+| StrategyService (활성화/비활성화) | ✅ 완료 |
+| JWT 인증 | ✅ 완료 |
+| 단위 테스트 / 통합 테스트 | 🔄 진행 중 |
+| 전략 CRUD API (Controller) | ⬜ 예정 |
+| 모의 매도 기능 | ⬜ 예정 |
+| MA 교차 전략 | ⬜ 예정 |
+| Swagger 문서화 | ⬜ 예정 |
 
 ---
 
