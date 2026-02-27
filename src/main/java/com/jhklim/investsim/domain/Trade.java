@@ -26,6 +26,10 @@ public class Trade extends BaseTimeEntity {
     private double openPrice;
     private double openQuantity;
 
+    private double closePrice;
+    private double profitAmount;
+    private double profitRate;
+
     @OneToOne(fetch = LAZY)
     @JoinColumn(name = "strategy_id")
     private Strategy strategy;
