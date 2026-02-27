@@ -19,14 +19,12 @@ import org.springframework.transaction.annotation.Transactional;
 public class TradeService {
 
     private final TradeRepository tradeRepository;
-    private final MemberRepository memberRepository;
 
     @Transactional
     public void buy(Strategy strategy, TradeOrderRequest order) {
-       Member member = memberRepository.findById(strategy.getMember().getId())
-               .orElseThrow(() -> new IllegalArgumentException("해당 멤버가 존재가 하지 않습니다."));
+        Member member = strategy.getMember();
 
-       try {
+        try {
            member.deductBalance(order.getTotalOrderPrice());
            Trade trade = new Trade(member, strategy, order);
            tradeRepository.save(trade);
