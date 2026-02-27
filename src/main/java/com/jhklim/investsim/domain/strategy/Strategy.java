@@ -49,4 +49,12 @@ public class Strategy {
     @BatchSize(size = 100)
     @OneToMany(mappedBy = "strategy", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<SellStrategy> sellStrategies = new ArrayList<>();
+
+    public void activate() {
+        this.isActive = true;
+    }
+
+    public void deactivate() {
+        this.isActive = false;
+    }
 }
