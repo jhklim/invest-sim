@@ -41,6 +41,13 @@ public class Trade extends BaseTimeEntity {
         return this.getOpenPrice() * getOpenQuantity();
     }
 
+    public void close(double closePrice) {
+        this.positionStatus = PositionStatus.CLOSE;
+        this.closePrice = closePrice;
+        this.profitAmount = (closePrice - this.openPrice) * this.openQuantity;
+        this.profitRate = ((closePrice - this.openPrice) / this.openPrice) * 100;
+    }
+
     public Trade(Member member, Strategy strategy, TradeOrderRequest order) {
         this.member = member;
         this.strategy = strategy;
