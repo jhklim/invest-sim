@@ -23,5 +23,5 @@ public class SellStrategy {
     @Enumerated(EnumType.STRING)
     private Indicator indicator;
 
-    private double Value;
+    private double indicatorValue;
 }
