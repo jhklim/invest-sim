@@ -55,14 +55,18 @@ public class StrategyEvaluator {
 
     private boolean checkBuyCondition(Indicator indicator, double value, List<CandleData> candles) {
         return switch (indicator) {
-            case RSI -> indicatorCalculator.calculateRsi(candles) <= value;
+            case RSI -> indicatorCalculator.calculateRsi(candles)
+                    .map(rsi -> rsi <= value)
+                    .orElse(false);
             case VOLUME -> candles.get(candles.size() - 1).getVolume() >= value;
         };
     }
 
     private boolean checkSellCondition(Indicator indicator, double value, List<CandleData> candles) {
         return switch (indicator) {
-            case RSI -> indicatorCalculator.calculateRsi(candles) >= value;
+            case RSI -> indicatorCalculator.calculateRsi(candles)
+                    .map(rsi -> rsi >= value)
+                    .orElse(false);
             case VOLUME -> candles.get(candles.size() - 1).getVolume() >= value;
         };
     }

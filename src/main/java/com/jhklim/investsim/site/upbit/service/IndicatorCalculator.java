@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class IndicatorCalculator {
@@ -15,10 +16,10 @@ public class IndicatorCalculator {
      * RSI 계산 (지수 이동평균 방식 - 업비트 기준)
      * a = 1 / (1 + (day - 1))
      * @param candles 오래된 순 → 최신 순 정렬된 캔들 리스트
-     * @return RSI 값 (0~100), 캔들 부족 시 -1 반환
+     * @return RSI 값 (0~100), 캔들 부족 시 Optional.empty() 반환
      */
-    public double calculateRsi(List<CandleData> candles) {
-        if (candles.size() < RSI_PERIOD + 1) return -1;
+    public Optional<Double> calculateRsi(List<CandleData> candles) {
+        if (candles.size() < RSI_PERIOD + 1) return Optional.empty();
 
         // 상승/하락 리스트 구성
         List<Double> upList = new ArrayList<>();
@@ -53,10 +54,10 @@ public class IndicatorCalculator {
             downEma = (downList.get(i) * a) + (downEma * (1 - a));
         }
 
-        if (downEma == 0) return 100;
+        if (downEma == 0) return Optional.of(100.0);
 
         double rs = upEma / downEma;
-        return 100 - (100 / (1 + rs));
+        return Optional.of(100 - (100 / (1 + rs)));
     }
 
     /**
