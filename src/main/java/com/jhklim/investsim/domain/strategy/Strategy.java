@@ -57,4 +57,11 @@ public class Strategy {
     public void deactivate() {
         this.isActive = false;
     }
+
+    public Strategy(Member member, Exchange exchange, String market, Double buyAmount) {
+        this.member = member;
+        this.exchange = exchange;
+        this.market = market;
+        this.buyAmount = buyAmount;
+    }
 }

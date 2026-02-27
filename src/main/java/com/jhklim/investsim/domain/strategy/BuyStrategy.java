@@ -23,5 +23,11 @@ public class BuyStrategy {
     @Enumerated(EnumType.STRING)
     private Indicator indicator;
 
-    private double Value;
+    private double indicatorValue;
+
+    public BuyStrategy(Strategy strategy, Indicator indicator, double indicatorValue) {
+        this.strategy = strategy;
+        this.indicator = indicator;
+        this.indicatorValue = indicatorValue;
+    }
 }
