@@ -43,14 +43,14 @@ public class StrategyEvaluator {
         if (buyStrategies.isEmpty()) return false;
         return buyStrategies.stream()
                 .allMatch(buyStrategy 
-                        -> checkBuyCondition(buyStrategy.getIndicator(), buyStrategy.getValue(), candles));
+                        -> checkBuyCondition(buyStrategy.getIndicator(), buyStrategy.getIndicatorValue(), candles));
     }
 
     private boolean checkAllSellConditions(List<SellStrategy> conditions, List<CandleData> candles) {
         if (conditions.isEmpty()) return false;
         return conditions.stream()
                 .allMatch(sellStrategy
-                        -> checkSellCondition(sellStrategy.getIndicator(), sellStrategy.getValue(), candles));
+                        -> checkSellCondition(sellStrategy.getIndicator(), sellStrategy.getIndicatorValue(), candles));
     }
 
     private boolean checkBuyCondition(Indicator indicator, double value, List<CandleData> candles) {
