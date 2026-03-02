@@ -19,6 +19,8 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -112,7 +114,7 @@ public class UpbitWebSocketRunner {
         }
     }
 
-    private double calculateQuantity(Strategy strategy, double tradePrice) {
-        return strategy.getBuyAmount()/tradePrice;
+    private BigDecimal calculateQuantity(Strategy strategy, BigDecimal tradePrice) {
+        return strategy.getBuyAmount().divide(tradePrice, 8, RoundingMode.HALF_UP);
     }
 }

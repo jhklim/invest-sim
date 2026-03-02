@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Slf4j
@@ -42,7 +43,7 @@ public class StrategyEvaluator {
     private boolean checkAllBuyConditions(List<BuyStrategy> buyStrategies, List<CandleData> candles) {
         if (buyStrategies.isEmpty()) return false;
         return buyStrategies.stream()
-                .allMatch(buyStrategy 
+                .allMatch(buyStrategy
                         -> checkBuyCondition(buyStrategy.getIndicator(), buyStrategy.getIndicatorValue(), candles));
     }
 
@@ -54,20 +55,22 @@ public class StrategyEvaluator {
     }
 
     private boolean checkBuyCondition(Indicator indicator, double value, List<CandleData> candles) {
+        BigDecimal threshold = BigDecimal.valueOf(value);
         return switch (indicator) {
             case RSI -> indicatorCalculator.calculateRsi(candles)
-                    .map(rsi -> rsi <= value)
+                    .map(rsi -> rsi.compareTo(threshold) <= 0)
                     .orElse(false);
-            case VOLUME -> candles.get(candles.size() - 1).getVolume() >= value;
+            case VOLUME -> candles.get(candles.size() - 1).getVolume().compareTo(threshold) >= 0;
         };
     }
 
     private boolean checkSellCondition(Indicator indicator, double value, List<CandleData> candles) {
+        BigDecimal threshold = BigDecimal.valueOf(value);
         return switch (indicator) {
             case RSI -> indicatorCalculator.calculateRsi(candles)
-                    .map(rsi -> rsi >= value)
+                    .map(rsi -> rsi.compareTo(threshold) >= 0)
                     .orElse(false);
-            case VOLUME -> candles.get(candles.size() - 1).getVolume() >= value;
+            case VOLUME -> candles.get(candles.size() - 1).getVolume().compareTo(threshold) >= 0;
         };
     }
 }

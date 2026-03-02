@@ -7,6 +7,9 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
 import static jakarta.persistence.EnumType.*;
 import static jakarta.persistence.FetchType.*;
 
@@ -23,12 +26,20 @@ public class Trade extends BaseTimeEntity {
     @JoinColumn(name = "member_id")
     private Member member;
 
-    private double openPrice;
-    private double openQuantity;
+    @Column(precision = 30, scale = 8)
+    private BigDecimal openPrice;
 
-    private double closePrice;
-    private double profitAmount;
-    private double profitRate;
+    @Column(precision = 30, scale = 8)
+    private BigDecimal openQuantity;
+
+    @Column(precision = 30, scale = 8)
+    private BigDecimal closePrice;
+
+    @Column(precision = 30, scale = 8)
+    private BigDecimal profitAmount;
+
+    @Column(precision = 10, scale = 4)
+    private BigDecimal profitRate;
 
     @OneToOne(fetch = LAZY)
     @JoinColumn(name = "strategy_id")
@@ -37,15 +48,18 @@ public class Trade extends BaseTimeEntity {
     @Enumerated(STRING)
     private PositionStatus positionStatus; // [OPEN, CLOSE]
 
-    public double getTotalOpenPrice() {
-        return this.getOpenPrice() * getOpenQuantity();
+    public BigDecimal getTotalOpenPrice() {
+        return this.openPrice.multiply(this.openQuantity);
     }
 
-    public void close(double closePrice) {
+    public void close(BigDecimal closePrice) {
         this.positionStatus = PositionStatus.CLOSE;
         this.closePrice = closePrice;
-        this.profitAmount = (closePrice - this.openPrice) * this.openQuantity;
-        this.profitRate = ((closePrice - this.openPrice) / this.openPrice) * 100;
+        this.profitAmount = closePrice.subtract(this.openPrice).multiply(this.openQuantity);
+        this.profitRate = closePrice.subtract(this.openPrice)
+                .divide(this.openPrice, 8, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100))
+                .setScale(4, RoundingMode.HALF_UP);
     }
 
     public Trade(Member member, Strategy strategy, TradeOrderRequest order) {
@@ -55,5 +69,4 @@ public class Trade extends BaseTimeEntity {
         this.openQuantity = order.getQuantity();
         this.positionStatus = PositionStatus.OPEN;
     }
-
 }

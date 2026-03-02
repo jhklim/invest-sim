@@ -9,6 +9,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,8 @@ public class Strategy {
     @OneToOne(mappedBy = "strategy")
     private Trade trade;
 
-    private Double buyAmount;
+    @Column(precision = 30, scale = 8)
+    private BigDecimal buyAmount;
 
     @BatchSize(size = 100)
     @OneToMany(mappedBy = "strategy", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -58,7 +60,7 @@ public class Strategy {
         this.isActive = false;
     }
 
-    public Strategy(Member member, Exchange exchange, String market, Double buyAmount) {
+    public Strategy(Member member, Exchange exchange, String market, BigDecimal buyAmount) {
         this.member = member;
         this.exchange = exchange;
         this.market = market;

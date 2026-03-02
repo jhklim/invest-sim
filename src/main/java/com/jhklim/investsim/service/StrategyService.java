@@ -12,6 +12,7 @@ import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 @Service
@@ -23,8 +24,7 @@ public class StrategyService {
     private final CurrentPriceStore currentPriceStore;
 
     public List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition) {
-        List<Strategy> strategies = strategyRepository.findActiveStrategiesByMarket(condition);
-        return strategies;
+        return strategyRepository.findActiveStrategiesByMarket(condition);
     }
 
     // 전략 활성화 - 잔고 차감(묶기)
@@ -54,8 +54,8 @@ public class StrategyService {
             strategy.getMember().addBalance(strategy.getBuyAmount());
         } else {
             // 매수 체결 후 -> 현재 가치로 반환
-            double currentPrice = currentPriceStore.get(strategy.getMarket());
-            double currentTotalValue = trade.getOpenQuantity() * currentPrice;
+            BigDecimal currentPrice = currentPriceStore.get(strategy.getMarket());
+            BigDecimal currentTotalValue = trade.getOpenQuantity().multiply(currentPrice);
             strategy.getMember().addBalance(currentTotalValue);
             trade.close(currentPrice);
         }

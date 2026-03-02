@@ -6,6 +6,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,17 +39,18 @@ public class Member extends BaseTimeEntity {
     @Version
     private int version; // 낙관적 락
 
-    private double balance;
+    @Column(precision = 30, scale = 8)
+    private BigDecimal balance;
 
-    public void addBalance(double amount) {
-        this.balance += amount;
+    public void addBalance(BigDecimal amount) {
+        this.balance = this.balance.add(amount);
     }
 
-    public void deductBalance(double amount) {
-        if (this.balance < amount) {
+    public void deductBalance(BigDecimal amount) {
+        if (this.balance.compareTo(amount) < 0) {
             throw new IllegalStateException("잔고 부족");
         }
-        this.balance -= amount;
+        this.balance = this.balance.subtract(amount);
     }
 
     public Member(String email, String password, Role role, String nickname) {
@@ -56,9 +58,10 @@ public class Member extends BaseTimeEntity {
         this.password = password;
         this.role = role;
         this.nickname = nickname;
+        this.balance = BigDecimal.ZERO;
     }
 
-    public Member(String email, String password, Role role, String nickname, double balance) {
+    public Member(String email, String password, Role role, String nickname, BigDecimal balance) {
         this.email = email;
         this.password = password;
         this.role = role;

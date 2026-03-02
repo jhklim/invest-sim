@@ -3,6 +3,8 @@ package com.jhklim.investsim.site.upbit.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 public class CandleData {
     @JsonProperty("market")
@@ -12,17 +14,17 @@ public class CandleData {
     private String candleDateTimeKst;
 
     @JsonProperty("opening_price")
-    private double openPrice;
+    private BigDecimal openPrice;
 
     @JsonProperty("high_price")
-    private double highPrice;
+    private BigDecimal highPrice;
 
     @JsonProperty("low_price")
-    private double lowPrice;
+    private BigDecimal lowPrice;
 
     @JsonProperty("trade_price")
-    private double closePrice;  // 종가 = RSI 계산에 사용
+    private BigDecimal closePrice;  // 종가 = RSI 계산에 사용
 
     @JsonProperty("candle_acc_trade_volume")
-    private double volume;
+    private BigDecimal volume;
 }

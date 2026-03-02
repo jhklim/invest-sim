@@ -4,7 +4,6 @@ import com.jhklim.investsim.domain.Member;
 import com.jhklim.investsim.domain.Trade;
 import com.jhklim.investsim.domain.strategy.Strategy;
 import com.jhklim.investsim.dto.TradeOrderRequest;
-import com.jhklim.investsim.repository.MemberRepository;
 import com.jhklim.investsim.repository.TradeRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

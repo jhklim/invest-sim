@@ -3,6 +3,8 @@ package com.jhklim.investsim.site.upbit.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 
+import java.math.BigDecimal;
+
 @Getter
 public class TradeTickData {
     @JsonProperty("type")
@@ -12,10 +14,10 @@ public class TradeTickData {
     private String market;
 
     @JsonProperty("trade_price")
-    private double tradePrice;
+    private BigDecimal tradePrice;
 
     @JsonProperty("trade_volume")
-    private double tradeVolume;
+    private BigDecimal tradeVolume;
 
     @JsonProperty("ask_bid")
     private String askBid; // BID(buy) / ASK(sell)
