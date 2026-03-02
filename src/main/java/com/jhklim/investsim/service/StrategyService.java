@@ -1,10 +1,15 @@
 package com.jhklim.investsim.service;
 
+import com.jhklim.investsim.controller.dto.CreateStrategyRequest;
+import com.jhklim.investsim.controller.dto.StrategyResponse;
 import com.jhklim.investsim.domain.Member;
 import com.jhklim.investsim.domain.PositionStatus;
 import com.jhklim.investsim.domain.Trade;
+import com.jhklim.investsim.domain.strategy.BuyStrategy;
+import com.jhklim.investsim.domain.strategy.SellStrategy;
 import com.jhklim.investsim.domain.strategy.Strategy;
 import com.jhklim.investsim.dto.ExchangeMarketSearchCond;
+import com.jhklim.investsim.repository.MemberRepository;
 import com.jhklim.investsim.repository.StrategyRepository;
 import com.jhklim.investsim.site.upbit.service.CurrentPriceStore;
 import lombok.RequiredArgsConstructor;
@@ -20,10 +25,40 @@ import java.util.List;
 public class StrategyService {
 
     private final StrategyRepository strategyRepository;
+    private final MemberRepository memberRepository;
     private final CurrentPriceStore currentPriceStore;
 
     public List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition) {
         return strategyRepository.findActiveStrategiesByMarket(condition);
+    }
+
+    public List<StrategyResponse> findByMember(Long memberId) {
+        return strategyRepository.findByMemberId(memberId).stream()
+                .map(StrategyResponse::from)
+                .toList();
+    }
+
+    @Transactional
+    public void create(Long memberId, CreateStrategyRequest request) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
+
+        Strategy strategy = new Strategy(
+                member,
+                request.getName(),
+                request.getDescription(),
+                request.getExchange(),
+                request.getMarket(),
+                request.getBuyAmount()
+        );
+
+        request.getBuyConditions().forEach(c ->
+                strategy.getBuyStrategies().add(new BuyStrategy(strategy, c.getIndicator(), c.getIndicatorValue())));
+
+        request.getSellConditions().forEach(c ->
+                strategy.getSellStrategies().add(new SellStrategy(strategy, c.getIndicator(), c.getIndicatorValue())));
+
+        strategyRepository.save(strategy);
     }
 
     // 전략 활성화 - 잔고 차감(묶기)
@@ -45,10 +80,8 @@ public class StrategyService {
         Trade trade = strategy.getTrade();
 
         if (trade == null || trade.getPositionStatus() == PositionStatus.CLOSE) {
-            // 매수 체결 전 -> buyAmount 그대로 환불
             strategy.getMember().addBalance(strategy.getBuyAmount());
         } else {
-            // 매수 체결 후 -> 현재 가치로 반환
             BigDecimal currentPrice = currentPriceStore.get(strategy.getMarket());
             BigDecimal currentTotalValue = trade.getOpenQuantity().multiply(currentPrice);
             strategy.getMember().addBalance(currentTotalValue);

@@ -66,4 +66,13 @@ public class Strategy {
         this.market = market;
         this.buyAmount = buyAmount;
     }
+
+    public Strategy(Member member, String name, String description, Exchange exchange, String market, BigDecimal buyAmount) {
+        this.member = member;
+        this.name = name;
+        this.description = description;
+        this.exchange = exchange;
+        this.market = market;
+        this.buyAmount = buyAmount;
+    }
 }
