@@ -24,4 +24,10 @@ public class SellStrategy {
     private Indicator indicator;
 
     private double indicatorValue;
+
+    public SellStrategy(Strategy strategy, Indicator indicator, double indicatorValue) {
+        this.strategy = strategy;
+        this.indicator = indicator;
+        this.indicatorValue = indicatorValue;
+    }
 }
