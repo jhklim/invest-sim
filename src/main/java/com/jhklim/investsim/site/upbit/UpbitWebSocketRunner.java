@@ -19,6 +19,8 @@ import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 import org.springframework.stereotype.Component;
 
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
@@ -74,11 +76,10 @@ public class UpbitWebSocketRunner {
             public void onMessage(ByteBuffer bytes) {
                 String jsonString = StandardCharsets.UTF_8.decode(bytes).toString();
                 try {
-                    // JSON String -> Java 객체
                     TradeTickData tick = objectMapper.readValue(jsonString, TradeTickData.class);
                     onTick(tick);
-                } catch (Exception e) {
-                    log.error("Parsing Error: {}", jsonString, e);
+                } catch (com.fasterxml.jackson.core.JsonProcessingException e) {
+                    log.error("[WebSocket] JSON 파싱 오류: {}", jsonString, e);
                 }
             }
 
@@ -109,7 +110,13 @@ public class UpbitWebSocketRunner {
 
             TradeOrderRequest order = new TradeOrderRequest(tick.getTradePrice(), calculateQuantity(strategy, tick.getTradePrice()));
 
-            if (signal == TradeSignal.BUY) tradeService.buy(strategy, order);
+            if (signal == TradeSignal.BUY) {
+                try {
+                    tradeService.buy(strategy, order);
+                } catch (ObjectOptimisticLockingFailureException e) {
+                    log.warn("[BUY] 낙관적 락 충돌 - 전략: {}", strategy.getName());
+                }
+            }
             // TODO: sell
         }
     }

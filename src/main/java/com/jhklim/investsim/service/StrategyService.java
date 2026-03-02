@@ -8,7 +8,6 @@ import com.jhklim.investsim.dto.ExchangeMarketSearchCond;
 import com.jhklim.investsim.repository.StrategyRepository;
 import com.jhklim.investsim.site.upbit.service.CurrentPriceStore;
 import lombok.RequiredArgsConstructor;
-import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,13 +32,9 @@ public class StrategyService {
         Strategy strategy = strategyRepository.findById(strategyId)
                 .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
 
-        try {
-            Member member = strategy.getMember();
-            member.deductBalance(strategy.getBuyAmount());
-            strategy.activate();
-        } catch (ObjectOptimisticLockingFailureException e) {
-            throw new IllegalStateException("잔고 처리 중 충돌이 발생했습니다. 다시 시도해주세요.");
-        }
+        Member member = strategy.getMember();
+        member.deductBalance(strategy.getBuyAmount());
+        strategy.activate();
     }
 
     @Transactional
