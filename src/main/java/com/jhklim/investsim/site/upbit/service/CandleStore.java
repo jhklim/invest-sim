@@ -16,25 +16,31 @@ public class CandleStore {
 
     // add initial candles (1 time each starting the program)
     public void init(String market, List<CandleData> candles) {
-        Deque<CandleData> deque = new ArrayDeque<>(candles);
-        store.put(market, deque);
+        store.put(market, new ArrayDeque<>(candles));
     }
 
     // add new candles (delete old candles)
     public void add(String market, CandleData candle) {
-        store.computeIfAbsent(market, k -> new ArrayDeque<>());
-        Deque<CandleData> deque = store.get(market);
-        deque.addLast(candle);
-        if (deque.size() > MAX_SIZE) deque.pollFirst();
+        Deque<CandleData> deque = store.computeIfAbsent(market, k -> new ArrayDeque<>());
+        synchronized (deque) {
+            deque.addLast(candle);
+            if (deque.size() > MAX_SIZE) deque.pollFirst();
+        }
     }
 
     // query candles list
     public List<CandleData> get(String market) {
-        return new ArrayList<>(store.getOrDefault(market, new ArrayDeque<>()));
+        Deque<CandleData> deque = store.getOrDefault(market, new ArrayDeque<>());
+        synchronized (deque) {
+            return new ArrayList<>(deque);
+        }
     }
 
     // count candles (for RSI)
     public int size(String market) {
-        return store.getOrDefault(market, new ArrayDeque<>()).size();
+        Deque<CandleData> deque = store.getOrDefault(market, new ArrayDeque<>());
+        synchronized (deque) {
+            return deque.size();
+        }
     }
 }
