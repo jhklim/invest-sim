@@ -17,17 +17,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
-import org.springframework.stereotype.Component;
-
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Component
@@ -43,28 +44,44 @@ public class UpbitWebSocketRunner {
     private final CurrentPriceStore currentPriceStore;
 
     private static final String MARKET = "KRW-BTC";
+    private static final int MAX_RETRY_DELAY_SECONDS = 60;
+
+    private WebSocketClient client;
+    private int retryCount = 0;
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @PostConstruct
-    public void start() throws URISyntaxException {
-
-        // step 1. add initial candles
+    public void start() {
         List<CandleData> candles = upbitRestClient.getCandles(MARKET, 50);
         candleStore.init(MARKET, candles);
         log.info("초기 캔들 적재 완료 - {}개", candles.size());
 
-        // step 2. connect WebSocket
+        connect();
+    }
+
+    private void connect() {
+        try {
+            client = createClient();
+            client.connect();
+        } catch (Exception e) {
+            log.error("[WebSocket] 연결 실패", e);
+            scheduleReconnect();
+        }
+    }
+
+    private WebSocketClient createClient() throws Exception {
         URI uri = new URI("wss://api.upbit.com/websocket/v1");
 
-        WebSocketClient client = new WebSocketClient(uri) {
+        return new WebSocketClient(uri) {
 
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
-                log.info("WebSocket Connected");
+                retryCount = 0;
+                log.info("[WebSocket] 연결됨");
 
                 String subscribeMsg = "[" +
                         "{\"ticket\":\"investsim\"}," +
                         "{\"type\":\"trade\", \"codes\":[\"" + MARKET + "\"]}]";
-
                 send(subscribeMsg);
             }
 
@@ -85,16 +102,22 @@ public class UpbitWebSocketRunner {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
-                log.warn("WebSocket Closed - code: {}, reason: {}", code, reason);
+                log.warn("[WebSocket] 연결 종료 - code: {}, reason: {}", code, reason);
+                scheduleReconnect();
             }
 
             @Override
             public void onError(Exception e) {
-                log.error("WebSocket Error", e);
+                log.error("[WebSocket] 오류 발생", e);
             }
         };
+    }
 
-        client.connect();
+    private void scheduleReconnect() {
+        long delaySeconds = Math.min((long) Math.pow(2, retryCount), MAX_RETRY_DELAY_SECONDS);
+        retryCount++;
+        log.info("[WebSocket] {}초 후 재연결 시도 ({}회차)", delaySeconds, retryCount);
+        scheduler.schedule(this::connect, delaySeconds, TimeUnit.SECONDS);
     }
 
     private void onTick(TradeTickData tick) {
