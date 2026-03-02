@@ -139,8 +139,13 @@ public class UpbitWebSocketRunner {
                 } catch (ObjectOptimisticLockingFailureException e) {
                     log.warn("[BUY] 낙관적 락 충돌 - 전략: {}", strategy.getName());
                 }
+            } else if (signal == TradeSignal.SELL) {
+                try {
+                    tradeService.sell(strategy, tick.getTradePrice());
+                } catch (ObjectOptimisticLockingFailureException e) {
+                    log.warn("[SELL] 낙관적 락 충돌 - 전략: {}", strategy.getName());
+                }
             }
-            // TODO: sell
         }
     }
 
