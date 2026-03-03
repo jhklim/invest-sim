@@ -42,7 +42,7 @@ class StrategyServiceTest {
         strategyRepository.save(strategy);
 
         // when
-        strategyService.activate(strategy.getId());
+        strategyService.activate(member.getId(), strategy.getId());
 
         // then
         assertThat(member.getBalance()).isEqualByComparingTo(new BigDecimal("50000"));
@@ -60,7 +60,7 @@ class StrategyServiceTest {
         strategyRepository.save(strategy);
 
         // when
-        assertThatThrownBy(() -> strategyService.activate(strategy.getId()))
+        assertThatThrownBy(() -> strategyService.activate(member.getId(), strategy.getId()))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("잔고 부족");
 
@@ -79,10 +79,10 @@ class StrategyServiceTest {
         Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", new BigDecimal("50000"));
         strategyRepository.save(strategy);
 
-        strategyService.activate(strategy.getId());
+        strategyService.activate(member.getId(), strategy.getId());
 
         // when
-        strategyService.deactivate(strategy.getId());
+        strategyService.deactivate(member.getId(), strategy.getId());
 
         // then
         assertThat(member.getBalance()).isEqualByComparingTo(new BigDecimal("100000"));

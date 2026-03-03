@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -20,6 +21,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<ErrorResponse> handleIllegalState(IllegalStateException e) {
         return ResponseEntity.badRequest().body(new ErrorResponse(e.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(new ErrorResponse(e.getMessage()));
     }
 
     @ExceptionHandler(ObjectOptimisticLockingFailureException.class)

@@ -31,14 +31,16 @@ public class StrategyController {
     }
 
     @PostMapping("/{id}/activate")
-    public ResponseEntity<Void> activate(@PathVariable Long id) {
-        strategyService.activate(id);
+    public ResponseEntity<Void> activate(@AuthenticationPrincipal Long memberId,
+                                         @PathVariable Long id) {
+        strategyService.activate(memberId, id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/deactivate")
-    public ResponseEntity<Void> deactivate(@PathVariable Long id) {
-        strategyService.deactivate(id);
+    public ResponseEntity<Void> deactivate(@AuthenticationPrincipal Long memberId,
+                                           @PathVariable Long id) {
+        strategyService.deactivate(memberId, id);
         return ResponseEntity.ok().build();
     }
 }

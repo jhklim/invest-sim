@@ -13,6 +13,7 @@ import com.jhklim.investsim.repository.MemberRepository;
 import com.jhklim.investsim.repository.StrategyRepository;
 import com.jhklim.investsim.site.upbit.service.CurrentPriceStore;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -63,9 +64,13 @@ public class StrategyService {
 
     // 전략 활성화 - 잔고 차감(묶기)
     @Transactional
-    public void activate(Long strategyId) {
+    public void activate(Long memberId, Long strategyId) {
         Strategy strategy = strategyRepository.findById(strategyId)
                 .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
+
+        if (!strategy.getMember().getId().equals(memberId)) {
+            throw new AccessDeniedException("해당 전략에 대한 권한이 없습니다.");
+        }
 
         Member member = strategy.getMember();
         member.deductBalance(strategy.getBuyAmount());
@@ -73,9 +78,13 @@ public class StrategyService {
     }
 
     @Transactional
-    public void deactivate(Long strategyId) {
+    public void deactivate(Long memberId, Long strategyId) {
         Strategy strategy = strategyRepository.findById(strategyId)
                 .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
+
+        if (!strategy.getMember().getId().equals(memberId)) {
+            throw new AccessDeniedException("해당 전략에 대한 권한이 없습니다.");
+        }
 
         Trade trade = strategy.getTrade();
 
