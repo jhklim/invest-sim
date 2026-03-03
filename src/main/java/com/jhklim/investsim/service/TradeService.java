@@ -25,7 +25,6 @@ public class TradeService {
     public void buy(Strategy strategy, TradeOrderRequest order) {
         Member member = strategy.getMember();
 
-        member.deductBalance(order.getTotalOrderPrice());
         Trade trade = new Trade(member, strategy, order);
         tradeRepository.save(trade);
         log.info("[BUY] 전략: {} / 마켓: {} / 가격: {} / 수량: {}",

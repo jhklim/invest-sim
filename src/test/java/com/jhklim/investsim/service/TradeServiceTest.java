@@ -66,7 +66,10 @@ class TradeServiceTest {
         Strategy strategy = new Strategy(member, Exchange.UPBIT, "KRW-BTC", new BigDecimal("50000"));
         strategyRepository.save(strategy);
 
-        // 매수 체결
+        // activate: 투자금 예약 (잔고 100,000 → 50,000)
+        member.deductBalance(strategy.getBuyAmount());
+
+        // 매수 체결 (잔고 변동 없음 - activate에서 이미 차감됨)
         TradeOrderRequest order = new TradeOrderRequest(new BigDecimal("5000000"), new BigDecimal("0.01"));
         tradeService.buy(strategy, order);
 
