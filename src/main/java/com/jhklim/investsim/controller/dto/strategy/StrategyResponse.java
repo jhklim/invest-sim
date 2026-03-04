@@ -1,4 +1,4 @@
-package com.jhklim.investsim.controller.dto;
+package com.jhklim.investsim.controller.dto.strategy;
 
 import com.jhklim.investsim.domain.Exchange;
 import com.jhklim.investsim.domain.strategy.Strategy;

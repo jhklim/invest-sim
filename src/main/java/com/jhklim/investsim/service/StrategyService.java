@@ -1,7 +1,7 @@
 package com.jhklim.investsim.service;
 
-import com.jhklim.investsim.controller.dto.CreateStrategyRequest;
-import com.jhklim.investsim.controller.dto.StrategyResponse;
+import com.jhklim.investsim.controller.dto.strategy.CreateStrategyRequest;
+import com.jhklim.investsim.controller.dto.strategy.StrategyResponse;
 import com.jhklim.investsim.domain.Member;
 import com.jhklim.investsim.domain.PositionStatus;
 import com.jhklim.investsim.domain.Trade;

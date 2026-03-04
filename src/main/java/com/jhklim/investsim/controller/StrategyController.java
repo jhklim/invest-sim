@@ -1,7 +1,7 @@
 package com.jhklim.investsim.controller;
 
-import com.jhklim.investsim.controller.dto.CreateStrategyRequest;
-import com.jhklim.investsim.controller.dto.StrategyResponse;
+import com.jhklim.investsim.controller.dto.strategy.CreateStrategyRequest;
+import com.jhklim.investsim.controller.dto.strategy.StrategyResponse;
 import com.jhklim.investsim.service.StrategyService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
