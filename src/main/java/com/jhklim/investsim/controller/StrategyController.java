@@ -4,6 +4,7 @@ import com.jhklim.investsim.controller.dto.CreateStrategyRequest;
 import com.jhklim.investsim.controller.dto.StrategyResponse;
 import com.jhklim.investsim.service.StrategyService;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -20,7 +21,7 @@ public class StrategyController {
 
     @PostMapping
     public ResponseEntity<Void> create(@AuthenticationPrincipal Long memberId,
-            @RequestBody CreateStrategyRequest request) {
+            @Valid @RequestBody CreateStrategyRequest request) {
         strategyService.create(memberId, request);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
