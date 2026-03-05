@@ -27,13 +27,16 @@ public class Trade extends BaseTimeEntity {
     private Member member;
 
     @Column(precision = 30, scale = 8)
-    private BigDecimal openPrice;
+    private BigDecimal openAmount;
+
+    @Column(precision = 30, scale = 8)
+    private BigDecimal openPricePerShare;
 
     @Column(precision = 30, scale = 8)
     private BigDecimal openQuantity;
 
     @Column(precision = 30, scale = 8)
-    private BigDecimal closePrice;
+    private BigDecimal closeAmount;
 
     @Column(precision = 30, scale = 8)
     private BigDecimal profitAmount;
@@ -48,16 +51,12 @@ public class Trade extends BaseTimeEntity {
     @Enumerated(STRING)
     private PositionStatus positionStatus; // [OPEN, CLOSE]
 
-    public BigDecimal getTotalOpenPrice() {
-        return this.openPrice.multiply(this.openQuantity);
-    }
-
-    public void close(BigDecimal closePrice) {
+    public void close(BigDecimal closeAmount) {
         this.positionStatus = PositionStatus.CLOSE;
-        this.closePrice = closePrice;
-        this.profitAmount = closePrice.subtract(this.openPrice).multiply(this.openQuantity);
-        this.profitRate = closePrice.subtract(this.openPrice)
-                .divide(this.openPrice, 8, RoundingMode.HALF_UP)
+        this.closeAmount = closeAmount;
+        this.profitAmount = closeAmount.subtract(openAmount);
+        this.profitRate = closeAmount.subtract(this.openAmount)
+                .divide(this.openAmount, 8, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(4, RoundingMode.HALF_UP);
     }
@@ -65,8 +64,15 @@ public class Trade extends BaseTimeEntity {
     public Trade(Member member, Strategy strategy, TradeOrderRequest order) {
         this.member = member;
         this.strategy = strategy;
-        this.openPrice = order.getPrice();
+        this.openPricePerShare = order.getPrice();
         this.openQuantity = order.getQuantity();
+        this.positionStatus = PositionStatus.OPEN;
+    }
+
+    public Trade(Member member, Strategy strategy, BigDecimal openAmount) {
+        this.member = member;
+        this.strategy = strategy;
+        this.openAmount = openAmount;
         this.positionStatus = PositionStatus.OPEN;
     }
 }

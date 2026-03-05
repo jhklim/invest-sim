@@ -51,7 +51,7 @@ class TradeServiceTest {
         // then
         List<Trade> trades = tradeRepository.findAll();
         assertThat(trades).hasSize(1);
-        assertThat(trades.get(0).getOpenPrice()).isEqualByComparingTo(new BigDecimal("5000000"));
+        assertThat(trades.get(0).getOpenPricePerShare()).isEqualByComparingTo(new BigDecimal("5000000"));
         assertThat(trades.get(0).getOpenQuantity()).isEqualByComparingTo(new BigDecimal("0.01"));
         assertThat(trades.get(0).getPositionStatus()).isEqualTo(PositionStatus.OPEN);
     }
@@ -80,7 +80,7 @@ class TradeServiceTest {
         // then
         Trade trade = tradeRepository.findAll().get(0);
         assertThat(trade.getPositionStatus()).isEqualTo(PositionStatus.CLOSE);
-        assertThat(trade.getClosePrice()).isEqualByComparingTo(sellPrice);
+        assertThat(trade.getCloseAmount()).isEqualByComparingTo(sellPrice);
         assertThat(trade.getProfitAmount()).isEqualByComparingTo(new BigDecimal("10000"));
         assertThat(member.getBalance()).isEqualByComparingTo(new BigDecimal("110000"));
     }
