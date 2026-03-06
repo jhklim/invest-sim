@@ -27,9 +27,6 @@ public class Trade extends BaseTimeEntity {
     private Member member;
 
     @Column(precision = 30, scale = 8)
-    private BigDecimal openAmount;
-
-    @Column(precision = 30, scale = 8)
     private BigDecimal openPricePerShare;
 
     @Column(precision = 30, scale = 8)
@@ -52,11 +49,12 @@ public class Trade extends BaseTimeEntity {
     private PositionStatus positionStatus; // [OPEN, CLOSE]
 
     public void close(BigDecimal closeAmount) {
+        BigDecimal openAmount = openPricePerShare.multiply(openQuantity);
         this.positionStatus = PositionStatus.CLOSE;
         this.closeAmount = closeAmount;
         this.profitAmount = closeAmount.subtract(openAmount);
-        this.profitRate = closeAmount.subtract(this.openAmount)
-                .divide(this.openAmount, 8, RoundingMode.HALF_UP)
+        this.profitRate = closeAmount.subtract(openAmount)
+                .divide(openAmount, 8, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(4, RoundingMode.HALF_UP);
     }
@@ -66,13 +64,6 @@ public class Trade extends BaseTimeEntity {
         this.strategy = strategy;
         this.openPricePerShare = order.getPrice();
         this.openQuantity = order.getQuantity();
-        this.positionStatus = PositionStatus.OPEN;
-    }
-
-    public Trade(Member member, Strategy strategy, BigDecimal openAmount) {
-        this.member = member;
-        this.strategy = strategy;
-        this.openAmount = openAmount;
         this.positionStatus = PositionStatus.OPEN;
     }
 }

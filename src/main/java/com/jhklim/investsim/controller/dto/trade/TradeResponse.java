@@ -1,6 +1,5 @@
 package com.jhklim.investsim.controller.dto.trade;
 
-import com.jhklim.investsim.controller.dto.strategy.StrategyResponse;
 import com.jhklim.investsim.domain.PositionStatus;
 import com.jhklim.investsim.domain.Trade;
 import lombok.AllArgsConstructor;
@@ -12,7 +11,6 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class TradeResponse {
     private Long id;
-    private BigDecimal openAmount;
     private BigDecimal openPricePerShare;
     private BigDecimal openQuantity;
     private BigDecimal closeAmount;
@@ -25,7 +23,6 @@ public class TradeResponse {
     public static TradeResponse from(Trade trade) {
         return new TradeResponse(
                 trade.getId(),
-                trade.getOpenAmount(),
                 trade.getOpenPricePerShare(),
                 trade.getOpenQuantity(),
                 trade.getCloseAmount(),
