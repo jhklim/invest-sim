@@ -1,7 +1,7 @@
 package com.jhklim.investsim.application.service;
 
 import com.jhklim.investsim.adapter.in.web.dto.trade.TradeResponse;
-import com.jhklim.investsim.adapter.out.persistence.jpa.TradeRepository;
+import com.jhklim.investsim.application.port.out.TradePort;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.PositionStatus;
@@ -21,14 +21,14 @@ import java.util.List;
 @RequiredArgsConstructor
 public class TradeService {
 
-    private final TradeRepository tradeRepository;
+    private final TradePort tradePort;
 
     @Transactional
     public void buy(Strategy strategy, TradeOrderRequest order) {
         Member member = strategy.getMember();
 
         Trade trade = new Trade(member, strategy, order);
-        tradeRepository.save(trade);
+        tradePort.save(trade);
         log.info("[BUY] 전략: {} / 마켓: {} / 가격: {} / 수량: {}",
                 strategy.getName(), strategy.getMarket(),
                 order.getPrice(), order.getQuantity());
@@ -36,7 +36,7 @@ public class TradeService {
 
     @Transactional
     public void sell(Strategy strategy, BigDecimal currentPrice) {
-        Trade trade = tradeRepository.findByStrategyIdAndPositionStatus(strategy.getId(), PositionStatus.OPEN)
+        Trade trade = tradePort.findByStrategyIdAndPositionStatus(strategy.getId(), PositionStatus.OPEN)
                 .orElseThrow(() -> new IllegalStateException("매도할 포지션이 없습니다. strategyId=" + strategy.getId()));
 
         BigDecimal returnAmount = trade.getOpenQuantity().multiply(currentPrice);
@@ -50,7 +50,7 @@ public class TradeService {
 
 
     public List<TradeResponse> findByMember(Long memberId) {
-        return tradeRepository.findByMemberId(memberId).stream()
+        return tradePort.findByMemberId(memberId).stream()
                 .map(TradeResponse::from)
                 .toList();
     }

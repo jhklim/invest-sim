@@ -1,5 +1,6 @@
 package com.jhklim.investsim.adapter.out.upbit;
 
+import com.jhklim.investsim.application.port.out.CurrentPricePort;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -7,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
-public class CurrentPriceStore {
+public class CurrentPriceStore implements CurrentPricePort {
 
     private final Map<String, BigDecimal> prices = new ConcurrentHashMap<>();
 

@@ -3,7 +3,7 @@ package com.jhklim.investsim.adapter.in.auth.service;
 import com.jhklim.investsim.adapter.in.auth.dto.LoginRequest;
 import com.jhklim.investsim.adapter.in.auth.dto.SignupRequest;
 import com.jhklim.investsim.adapter.in.auth.jwt.JwtTokenProvider;
-import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
+import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import lombok.RequiredArgsConstructor;
@@ -14,12 +14,12 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthService {
 
-    private final MemberRepository memberRepository;
+    private final MemberPort memberPort;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
     public void signup(SignupRequest request) {
-        if (memberRepository.existsByEmail(request.getEmail())) {
+        if (memberPort.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
         }
 
@@ -30,11 +30,11 @@ public class AuthService {
                 request.getNickname()
         );
 
-        memberRepository.save(member);
+        memberPort.save(member);
     }
 
     public String login(LoginRequest request) {
-        Member member = memberRepository.findByEmail(request.getEmail())
+        Member member = memberPort.findByEmail(request.getEmail())
                 .orElseThrow(() -> new IllegalArgumentException("해당 이메일에 대한 유저가 존재하지 않습니다."));
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {

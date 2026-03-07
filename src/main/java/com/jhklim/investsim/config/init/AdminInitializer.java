@@ -1,6 +1,6 @@
 package com.jhklim.investsim.config.init;
 
-import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
+import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import jakarta.annotation.PostConstruct;
@@ -12,12 +12,12 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class AdminInitializer {
 
-    private final MemberRepository memberRepository;
+    private final MemberPort memberPort;
     private final PasswordEncoder passwordEncoder;
 
     @PostConstruct
     private void initAdmin() {
-        if (!memberRepository.existsByEmail("admin@gmail.com")) {
+        if (!memberPort.existsByEmail("admin@gmail.com")) {
 
             Member admin = new Member(
                     "admin@gmail.com",
@@ -26,7 +26,7 @@ public class AdminInitializer {
                     "admin"
             );
 
-            memberRepository.save(admin);
+            memberPort.save(admin);
         }
     }
 }

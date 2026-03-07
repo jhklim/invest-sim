@@ -2,10 +2,10 @@ package com.jhklim.investsim.application.service;
 
 import com.jhklim.investsim.adapter.in.web.dto.strategy.CreateStrategyRequest;
 import com.jhklim.investsim.adapter.in.web.dto.strategy.StrategyResponse;
-import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
-import com.jhklim.investsim.adapter.out.persistence.jpa.StrategyRepository;
-import com.jhklim.investsim.adapter.out.upbit.CurrentPriceStore;
 import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
+import com.jhklim.investsim.application.port.out.CurrentPricePort;
+import com.jhklim.investsim.application.port.out.MemberPort;
+import com.jhklim.investsim.application.port.out.StrategyPort;
 import com.jhklim.investsim.domain.model.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
@@ -20,23 +20,23 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StrategyService {
 
-    private final StrategyRepository strategyRepository;
-    private final MemberRepository memberRepository;
-    private final CurrentPriceStore currentPriceStore;
+    private final StrategyPort strategyPort;
+    private final MemberPort memberPort;
+    private final CurrentPricePort currentPricePort;
 
     public List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition) {
-        return strategyRepository.findActiveStrategiesByMarket(condition);
+        return strategyPort.findActiveStrategiesByMarket(condition);
     }
 
     public List<StrategyResponse> findByMember(Long memberId) {
-        return strategyRepository.findByMemberId(memberId).stream()
+        return strategyPort.findByMemberId(memberId).stream()
                 .map(StrategyResponse::from)
                 .toList();
     }
 
     @Transactional
     public void create(Long memberId, CreateStrategyRequest request) {
-        Member member = memberRepository.findById(memberId)
+        Member member = memberPort.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
 
         Strategy strategy = new Strategy(
@@ -54,13 +54,13 @@ public class StrategyService {
         request.getSellConditions().forEach(c ->
                 strategy.getSellStrategies().add(new SellStrategy(strategy, c.getIndicator(), c.getIndicatorValue())));
 
-        strategyRepository.save(strategy);
+        strategyPort.save(strategy);
     }
 
     // 전략 활성화 - 잔고 차감(묶기)
     @Transactional
     public void activate(Long memberId, Long strategyId) {
-        Strategy strategy = strategyRepository.findById(strategyId)
+        Strategy strategy = strategyPort.findById(strategyId)
                 .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
 
         if (!strategy.getMember().getId().equals(memberId)) {
@@ -74,7 +74,7 @@ public class StrategyService {
 
     @Transactional
     public void deactivate(Long memberId, Long strategyId) {
-        Strategy strategy = strategyRepository.findById(strategyId)
+        Strategy strategy = strategyPort.findById(strategyId)
                 .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
 
         if (!strategy.getMember().getId().equals(memberId)) {
@@ -86,7 +86,7 @@ public class StrategyService {
         if (trade == null || trade.getPositionStatus() == PositionStatus.CLOSE) {
             strategy.getMember().addBalance(strategy.getBuyAmount());
         } else {
-            BigDecimal currentPrice = currentPriceStore.get(strategy.getMarket());
+            BigDecimal currentPrice = currentPricePort.get(strategy.getMarket());
             BigDecimal currentTotalValue = trade.getOpenQuantity().multiply(currentPrice);
             strategy.getMember().addBalance(currentTotalValue);
             trade.close(currentPrice);
