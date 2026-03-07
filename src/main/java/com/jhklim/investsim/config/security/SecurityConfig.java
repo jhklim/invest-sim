@@ -1,6 +1,6 @@
 package com.jhklim.investsim.config.security;
 
-import com.jhklim.investsim.auth.filter.JwtAuthenticationFilter;
+import com.jhklim.investsim.adapter.in.auth.filter.JwtAuthenticationFilter;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

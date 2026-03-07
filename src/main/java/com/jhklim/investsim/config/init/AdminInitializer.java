@@ -1,8 +1,8 @@
 package com.jhklim.investsim.config.init;
 
-import com.jhklim.investsim.domain.Member;
-import com.jhklim.investsim.domain.Role;
-import com.jhklim.investsim.repository.MemberRepository;
+import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
+import com.jhklim.investsim.domain.model.Member;
+import com.jhklim.investsim.domain.model.Role;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
