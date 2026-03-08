@@ -14,6 +14,7 @@
 ## 목차
 - [프로젝트 개요](#-프로젝트-개요)
 - [기술 스택](#-기술-스택)
+- [아키텍처](#-아키텍처)
 - [실시간 데이터 흐름](#-실시간-데이터-흐름)
 - [핵심 설계 포인트](#-핵심-설계-포인트)
 - [도메인 모델](#-도메인-모델)
@@ -32,7 +33,7 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 ### 기획 의도
 - 단순 CRUD를 넘어 **실시간 데이터 처리 + 자동화 로직**을 구현하는 경험
 - **JPA 심화** (N+1 해결, QueryDSL 동적 쿼리, 낙관적 락)를 실전에서 적용
-- SRP 원칙에 따라 **단일 책임을 가진 컴포넌트로 분리**하는 설계 경험
+- **헥사고날 아키텍처** 기반으로 계층 간 의존성을 제어하는 설계 경험
 
 ---
 
@@ -49,6 +50,31 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 | Docs | Swagger (SpringDoc) |
 | Test | JUnit 5, H2 In-Memory |
 | Tools | IntelliJ IDEA, DBeaver, Gradle |
+
+---
+
+## 🏗 아키텍처
+
+**헥사고날 아키텍처 (Ports & Adapters)** 를 적용해 Application 계층이 외부(웹, DB, WebSocket)에 의존하지 않도록 설계했습니다.
+
+```
+[인바운드 어댑터]                [애플리케이션]                   [아웃바운드 어댑터]
+
+StrategyController  ──→  StrategyUseCase (in port)
+TradeController     ──→  TradeUseCase (in port)         StrategyPort (out port)  ──→  StrategyPersistenceAdapter
+TickProcessor       ──→       ↓                    ──→  TradePort (out port)     ──→  TradePersistenceAdapter
+                       StrategyService                  MemberPort (out port)    ──→  MemberPersistenceAdapter
+                       TradeService                     CurrentPricePort         ──→  CurrentPriceStore
+```
+
+| 계층 | 패키지 | 역할 |
+|------|--------|------|
+| Domain | `domain/model`, `domain/service` | 핵심 엔티티 및 도메인 로직 |
+| Application | `application/service`, `application/port` | UseCase 정의, 포트 인터페이스 |
+| Inbound Adapter | `adapter/in/web`, `adapter/in/websocket`, `adapter/in/auth` | REST API, WebSocket, JWT |
+| Outbound Adapter | `adapter/out/persistence`, `adapter/out/upbit` | JPA, Upbit REST 클라이언트 |
+
+**의존성 방향:** 항상 바깥 → 안쪽. Application 계층은 어댑터를 전혀 모릅니다.
 
 ---
 
@@ -86,7 +112,7 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
    |
    | REST API (JWT 인증)
    v
-[Controller Layer]  ──>  [Service Layer]  ──>  [Repository Layer]  ──>  [MySQL]
+[Controller]  ──>  [UseCase (in port)]  ──>  [Service]  ──>  [Port (out port)]  ──>  [MySQL]
 ```
 
 ---
@@ -141,7 +167,22 @@ private Long version;  // Member 엔티티
 | `CandleStore` | 마켓별 캔들 슬라이딩 윈도우 (최대 50개) 유지 |
 | `CurrentPriceStore` | 마켓별 현재가 캐싱 |
 
-### 5. 단일 책임 원칙 (SRP) — WebSocket 컴포넌트 분리
+### 5. 헥사고날 아키텍처 — 의존성 역전으로 계층 분리
+
+Application 계층이 외부 어댑터(웹, DB)를 직접 알지 못하도록 포트(인터페이스)로 추상화합니다.
+
+- **인바운드 포트 (UseCase)**: Controller / TickProcessor가 Service 구현체 대신 `StrategyUseCase`, `TradeUseCase` 인터페이스에 의존
+- **아웃바운드 포트**: Service가 JPA Repository 대신 `StrategyPort`, `TradePort` 등 인터페이스에 의존. 실제 JPA 구현은 `PersistenceAdapter`가 담당
+
+```java
+// Service는 포트(인터페이스)만 알고, 구현체(JPA)는 모름
+public class StrategyService implements StrategyUseCase {
+    private final StrategyPort strategyPort;   // ← 인터페이스
+    private final MemberPort memberPort;       // ← 인터페이스
+}
+```
+
+### 6. 단일 책임 원칙 (SRP) — WebSocket 컴포넌트 분리
 
 초기에는 하나의 클래스가 WebSocket 연결, 재연결, 틱 처리를 모두 담당했으나 책임이 집중되어 분리했습니다.
 
@@ -235,6 +276,10 @@ Member (1) ──── (N) Strategy (1) ──── (1) Trade
 | WebSocket SRP 리팩토링 (3개 클래스 분리) | ✅ 완료 |
 | Bean Validation (@Valid) | ✅ 완료 |
 | Swagger 문서화 | ✅ 완료 |
+| 헥사고날 아키텍처 패키지 구조 재편 | ✅ 완료 |
+| 아웃바운드 포트 추출 (MemberPort / StrategyPort / TradePort / CurrentPricePort) | ✅ 완료 |
+| Application DTO 분리 (CreateStrategyCommand) | ✅ 완료 |
+| 인바운드 포트 추출 (StrategyUseCase / TradeUseCase) | ✅ 완료 |
 | 단위 / 통합 테스트 | 🔄 진행 중 |
 | MA 교차 전략 (골든크로스 / 데드크로스) | ⬜ 예정 |
 | 다중 마켓 지원 (현재 KRW-BTC 고정) | ⬜ 예정 |
