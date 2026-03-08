@@ -1,5 +1,6 @@
 package com.jhklim.investsim.application.service;
 
+import com.jhklim.investsim.application.port.in.TradeUseCase;
 import com.jhklim.investsim.application.port.out.TradePort;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
 import com.jhklim.investsim.domain.model.Member;
@@ -18,7 +19,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class TradeService {
+public class TradeService implements TradeUseCase {
 
     private final TradePort tradePort;
 

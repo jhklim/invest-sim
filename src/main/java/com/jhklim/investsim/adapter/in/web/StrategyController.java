@@ -4,7 +4,7 @@ import com.jhklim.investsim.adapter.in.web.dto.strategy.CreateStrategyRequest;
 import com.jhklim.investsim.adapter.in.web.dto.strategy.StrategyResponse;
 import com.jhklim.investsim.application.dto.CreateStrategyCommand;
 import com.jhklim.investsim.application.dto.StrategyConditionCommand;
-import com.jhklim.investsim.application.service.StrategyService;
+import com.jhklim.investsim.application.port.in.StrategyUseCase;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -19,7 +19,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class StrategyController {
 
-    private final StrategyService strategyService;
+    private final StrategyUseCase strategyUseCase;
 
     @PostMapping
     public ResponseEntity<Void> create(@AuthenticationPrincipal Long memberId,
@@ -37,14 +37,14 @@ public class StrategyController {
                         .map(c -> new StrategyConditionCommand(c.getIndicator(), c.getIndicatorValue()))
                         .toList()
         );
-        strategyService.create(memberId, command);
+        strategyUseCase.create(memberId, command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
     public ResponseEntity<List<StrategyResponse>> getMyStrategies(@AuthenticationPrincipal Long memberId) {
         return ResponseEntity.ok(
-                strategyService.findByMember(memberId).stream()
+                strategyUseCase.findByMember(memberId).stream()
                         .map(StrategyResponse::from)
                         .toList()
         );
@@ -53,14 +53,14 @@ public class StrategyController {
     @PostMapping("/{id}/activate")
     public ResponseEntity<Void> activate(@AuthenticationPrincipal Long memberId,
                                          @PathVariable Long id) {
-        strategyService.activate(memberId, id);
+        strategyUseCase.activate(memberId, id);
         return ResponseEntity.ok().build();
     }
 
     @PostMapping("/{id}/deactivate")
     public ResponseEntity<Void> deactivate(@AuthenticationPrincipal Long memberId,
                                            @PathVariable Long id) {
-        strategyService.deactivate(memberId, id);
+        strategyUseCase.deactivate(memberId, id);
         return ResponseEntity.ok().build();
     }
 }

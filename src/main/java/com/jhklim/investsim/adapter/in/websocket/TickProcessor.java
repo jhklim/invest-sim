@@ -5,8 +5,8 @@ import com.jhklim.investsim.adapter.out.upbit.CurrentPriceStore;
 import com.jhklim.investsim.adapter.out.upbit.dto.TradeTickData;
 import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
-import com.jhklim.investsim.application.service.StrategyService;
-import com.jhklim.investsim.application.service.TradeService;
+import com.jhklim.investsim.application.port.in.StrategyUseCase;
+import com.jhklim.investsim.application.port.in.TradeUseCase;
 import com.jhklim.investsim.domain.model.CandleData;
 import com.jhklim.investsim.domain.model.Exchange;
 import com.jhklim.investsim.domain.model.Strategy;
@@ -34,8 +34,8 @@ public class TickProcessor {
 
     private final CurrentPriceStore currentPriceStore;
     private final CandleStore candleStore;
-    private final StrategyService strategyService;
-    private final TradeService tradeService;
+    private final StrategyUseCase strategyUseCase;
+    private final TradeUseCase tradeUseCase;
     private final StrategyEvaluator strategyEvaluator;
 
     public void process(TradeTickData tick) {
@@ -43,7 +43,7 @@ public class TickProcessor {
         List<CandleData> candles = candleStore.get(tick.getMarket());
 
         ExchangeMarketSearchCond condition = new ExchangeMarketSearchCond(Exchange.UPBIT, tick.getMarket());
-        List<Strategy> activeStrategies = strategyService.findActiveStrategiesByMarket(condition);
+        List<Strategy> activeStrategies = strategyUseCase.findActiveStrategiesByMarket(condition);
 
         for (Strategy strategy : activeStrategies) {
             TradeSignal signal = strategyEvaluator.evaluate(strategy, candles);
@@ -56,13 +56,13 @@ public class TickProcessor {
 
             if (signal == TradeSignal.BUY) {
                 try {
-                    tradeService.buy(strategy, order);
+                    tradeUseCase.buy(strategy, order);
                 } catch (ObjectOptimisticLockingFailureException e) {
                     log.warn("[BUY] 낙관적 락 충돌 - 전략: {}", strategy.getName());
                 }
             } else if (signal == TradeSignal.SELL) {
                 try {
-                    tradeService.sell(strategy, tick.getTradePrice());
+                    tradeUseCase.sell(strategy, tick.getTradePrice());
                 } catch (ObjectOptimisticLockingFailureException e) {
                     log.warn("[SELL] 낙관적 락 충돌 - 전략: {}", strategy.getName());
                 }

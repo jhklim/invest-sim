@@ -2,6 +2,7 @@ package com.jhklim.investsim.application.service;
 
 import com.jhklim.investsim.application.dto.CreateStrategyCommand;
 import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
+import com.jhklim.investsim.application.port.in.StrategyUseCase;
 import com.jhklim.investsim.application.port.out.CurrentPricePort;
 import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.application.port.out.StrategyPort;
@@ -17,7 +18,7 @@ import java.util.List;
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
-public class StrategyService {
+public class StrategyService implements StrategyUseCase {
 
     private final StrategyPort strategyPort;
     private final MemberPort memberPort;
