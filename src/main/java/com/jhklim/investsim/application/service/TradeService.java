@@ -1,6 +1,5 @@
 package com.jhklim.investsim.application.service;
 
-import com.jhklim.investsim.adapter.in.web.dto.trade.TradeResponse;
 import com.jhklim.investsim.application.port.out.TradePort;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
 import com.jhklim.investsim.domain.model.Member;
@@ -49,9 +48,7 @@ public class TradeService {
     }
 
 
-    public List<TradeResponse> findByMember(Long memberId) {
-        return tradePort.findByMemberId(memberId).stream()
-                .map(TradeResponse::from)
-                .toList();
+    public List<Trade> findByMember(Long memberId) {
+        return tradePort.findByMemberId(memberId);
     }
 }

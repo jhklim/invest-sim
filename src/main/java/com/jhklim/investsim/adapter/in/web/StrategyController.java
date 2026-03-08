@@ -2,6 +2,8 @@ package com.jhklim.investsim.adapter.in.web;
 
 import com.jhklim.investsim.adapter.in.web.dto.strategy.CreateStrategyRequest;
 import com.jhklim.investsim.adapter.in.web.dto.strategy.StrategyResponse;
+import com.jhklim.investsim.application.dto.CreateStrategyCommand;
+import com.jhklim.investsim.application.dto.StrategyConditionCommand;
 import com.jhklim.investsim.application.service.StrategyService;
 import lombok.RequiredArgsConstructor;
 import jakarta.validation.Valid;
@@ -22,13 +24,30 @@ public class StrategyController {
     @PostMapping
     public ResponseEntity<Void> create(@AuthenticationPrincipal Long memberId,
             @Valid @RequestBody CreateStrategyRequest request) {
-        strategyService.create(memberId, request);
+        CreateStrategyCommand command = new CreateStrategyCommand(
+                request.getName(),
+                request.getDescription(),
+                request.getExchange(),
+                request.getMarket(),
+                request.getBuyAmount(),
+                request.getBuyConditions().stream()
+                        .map(c -> new StrategyConditionCommand(c.getIndicator(), c.getIndicatorValue()))
+                        .toList(),
+                request.getSellConditions().stream()
+                        .map(c -> new StrategyConditionCommand(c.getIndicator(), c.getIndicatorValue()))
+                        .toList()
+        );
+        strategyService.create(memberId, command);
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping
     public ResponseEntity<List<StrategyResponse>> getMyStrategies(@AuthenticationPrincipal Long memberId) {
-        return ResponseEntity.ok(strategyService.findByMember(memberId));
+        return ResponseEntity.ok(
+                strategyService.findByMember(memberId).stream()
+                        .map(StrategyResponse::from)
+                        .toList()
+        );
     }
 
     @PostMapping("/{id}/activate")

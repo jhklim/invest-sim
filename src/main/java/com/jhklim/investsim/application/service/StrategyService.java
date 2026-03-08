@@ -1,7 +1,6 @@
 package com.jhklim.investsim.application.service;
 
-import com.jhklim.investsim.adapter.in.web.dto.strategy.CreateStrategyRequest;
-import com.jhklim.investsim.adapter.in.web.dto.strategy.StrategyResponse;
+import com.jhklim.investsim.application.dto.CreateStrategyCommand;
 import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
 import com.jhklim.investsim.application.port.out.CurrentPricePort;
 import com.jhklim.investsim.application.port.out.MemberPort;
@@ -28,30 +27,28 @@ public class StrategyService {
         return strategyPort.findActiveStrategiesByMarket(condition);
     }
 
-    public List<StrategyResponse> findByMember(Long memberId) {
-        return strategyPort.findByMemberId(memberId).stream()
-                .map(StrategyResponse::from)
-                .toList();
+    public List<Strategy> findByMember(Long memberId) {
+        return strategyPort.findByMemberId(memberId);
     }
 
     @Transactional
-    public void create(Long memberId, CreateStrategyRequest request) {
+    public void create(Long memberId, CreateStrategyCommand command) {
         Member member = memberPort.findById(memberId)
                 .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
 
         Strategy strategy = new Strategy(
                 member,
-                request.getName(),
-                request.getDescription(),
-                request.getExchange(),
-                request.getMarket(),
-                request.getBuyAmount()
+                command.getName(),
+                command.getDescription(),
+                command.getExchange(),
+                command.getMarket(),
+                command.getBuyAmount()
         );
 
-        request.getBuyConditions().forEach(c ->
+        command.getBuyConditions().forEach(c ->
                 strategy.getBuyStrategies().add(new BuyStrategy(strategy, c.getIndicator(), c.getIndicatorValue())));
 
-        request.getSellConditions().forEach(c ->
+        command.getSellConditions().forEach(c ->
                 strategy.getSellStrategies().add(new SellStrategy(strategy, c.getIndicator(), c.getIndicatorValue())));
 
         strategyPort.save(strategy);

@@ -18,6 +18,10 @@ public class TradeController {
 
     @GetMapping
     public ResponseEntity<List<TradeResponse>> getMyTrades(@AuthenticationPrincipal Long memberId) {
-        return ResponseEntity.ok(tradeService.findByMember(memberId));
+        return ResponseEntity.ok(
+                tradeService.findByMember(memberId).stream()
+                        .map(TradeResponse::from)
+                        .toList()
+        );
     }
 }
