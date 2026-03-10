@@ -19,7 +19,6 @@
 - [핵심 설계 포인트](#-핵심-설계-포인트)
 - [도메인 모델](#-도메인-모델)
 - [API 명세](#-api-명세)
-- [진행 현황](#-진행-현황)
 
 ---
 
@@ -250,41 +249,6 @@ Member (1) ──── (N) Strategy (1) ──── (1) Trade
 | GET | `/api/trades` | 내 거래 내역 조회 | 필요 |
 
 > Swagger UI: `http://localhost:8080/swagger-ui/index.html`
-
----
-
-## ✅ 진행 현황
-
-| 기능 | 상태 |
-|------|------|
-| DB 설계 (ERD) | ✅ 완료 |
-| Member 엔티티 + 잔고 / 낙관적 락 | ✅ 완료 |
-| Strategy / BuyStrategy / SellStrategy 엔티티 | ✅ 완료 |
-| Trade 엔티티 (수익률 기록 포함) | ✅ 완료 |
-| Upbit WebSocket 연동 (지수 백오프 재연결) | ✅ 완료 |
-| 초기 캔들 REST API 수집 | ✅ 완료 |
-| In-Memory CandleStore / CurrentPriceStore | ✅ 완료 |
-| RSI 보조지표 계산 (EMA 방식) | ✅ 완료 |
-| MA 단순 이동평균 계산 | ✅ 완료 |
-| StrategyEvaluator (전략 조건 체크) | ✅ 완료 |
-| QueryDSL 동적 쿼리 (활성 전략 조회) | ✅ 완료 |
-| TradeService (모의 매수 / 매도) | ✅ 완료 |
-| StrategyService (활성화 / 비활성화) | ✅ 완료 |
-| JWT 인증 (Spring Security) | ✅ 완료 |
-| 전략 CRUD API | ✅ 완료 |
-| 거래 내역 조회 API | ✅ 완료 |
-| WebSocket SRP 리팩토링 (3개 클래스 분리) | ✅ 완료 |
-| Bean Validation (@Valid) | ✅ 완료 |
-| Swagger 문서화 | ✅ 완료 |
-| 헥사고날 아키텍처 패키지 구조 재편 | ✅ 완료 |
-| 아웃바운드 포트 추출 (MemberPort / StrategyPort / TradePort / CurrentPricePort) | ✅ 완료 |
-| Application DTO 분리 (CreateStrategyCommand) | ✅ 완료 |
-| 인바운드 포트 추출 (StrategyUseCase / TradeUseCase) | ✅ 완료 |
-| 단위 / 통합 테스트 | 🔄 진행 중 |
-| MA 교차 전략 (골든크로스 / 데드크로스) | ⬜ 예정 |
-| 다중 마켓 지원 (현재 KRW-BTC 고정) | ⬜ 예정 |
-
----
 
 ## 📬 Contact
 - GitHub: [github.com/jhklim](https://github.com/jhklim)
