@@ -1,6 +1,6 @@
 package com.jhklim.investsim.application.service;
 
-import com.jhklim.investsim.adapter.in.web.dto.trade.TradeResponse;
+import com.jhklim.investsim.domain.model.Trade;
 import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
 import com.jhklim.investsim.adapter.out.persistence.jpa.StrategyRepository;
 import com.jhklim.investsim.adapter.out.persistence.jpa.TradeRepository;
@@ -101,11 +101,11 @@ class TradeServiceTest {
         tradeService.buy(strategy, order);
 
         // when
-        List<TradeResponse> result = tradeService.findByMember(member.getId());
+        List<Trade> result = tradeService.findByMember(member.getId());
 
         // then
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getStrategyId()).isEqualTo(strategy.getId());
+        assertThat(result.get(0).getStrategy().getId()).isEqualTo(strategy.getId());
         assertThat(result.get(0).getOpenPricePerShare()).isEqualByComparingTo(new BigDecimal("5000000"));
         assertThat(result.get(0).getPositionStatus()).isEqualTo(PositionStatus.OPEN);
     }
@@ -118,7 +118,7 @@ class TradeServiceTest {
         memberRepository.save(member);
 
         // when
-        List<TradeResponse> result = tradeService.findByMember(member.getId());
+        List<Trade> result = tradeService.findByMember(member.getId());
 
         // then
         assertThat(result).isEmpty();
