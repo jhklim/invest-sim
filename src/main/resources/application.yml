@@ -17,6 +17,7 @@ logging:
   level:
     org.hibernate.SQL: debug
     org.hibernate.type: trace
+    com.jhklim.investsim.adapter.in.websocket.TickProcessor: warn
 
 jwt:
   secret: my-super-secret-key-my-super-secret-key-123456
