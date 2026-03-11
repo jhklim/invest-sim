@@ -7,4 +7,5 @@ import java.util.List;
 
 public interface StrategyRepository extends JpaRepository<Strategy, Long>, StrategyRepositoryCustom {
     List<Strategy> findByMemberId(Long memberId);
+    List<Strategy> findAllByIsActiveTrue();
 }

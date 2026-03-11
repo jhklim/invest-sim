@@ -3,10 +3,12 @@ package com.jhklim.investsim.application.service;
 import com.jhklim.investsim.application.dto.CreateStrategyCommand;
 import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
 import com.jhklim.investsim.application.port.in.StrategyUseCase;
+import com.jhklim.investsim.application.port.out.ActiveStrategyPort;
 import com.jhklim.investsim.application.port.out.CurrentPricePort;
 import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.application.port.out.StrategyPort;
 import com.jhklim.investsim.domain.model.*;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -23,9 +25,11 @@ public class StrategyService implements StrategyUseCase {
     private final StrategyPort strategyPort;
     private final MemberPort memberPort;
     private final CurrentPricePort currentPricePort;
+    private final ActiveStrategyPort activeStrategyPort;
 
-    public List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition) {
-        return strategyPort.findActiveStrategiesByMarket(condition);
+    @PostConstruct
+    public void initCache() {
+        strategyPort.findAllActive().forEach(activeStrategyPort::add);
     }
 
     public List<Strategy> findByMember(Long memberId) {
@@ -68,6 +72,7 @@ public class StrategyService implements StrategyUseCase {
         Member member = strategy.getMember();
         member.deductBalance(strategy.getBuyAmount());
         strategy.activate();
+        activeStrategyPort.add(strategy);
     }
 
     @Transactional
@@ -91,5 +96,6 @@ public class StrategyService implements StrategyUseCase {
         }
 
         strategy.deactivate();
+        activeStrategyPort.remove(strategy.getId());
     }
 }

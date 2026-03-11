@@ -3,10 +3,9 @@ package com.jhklim.investsim.adapter.in.websocket;
 import com.jhklim.investsim.adapter.out.upbit.CandleStore;
 import com.jhklim.investsim.adapter.out.upbit.CurrentPriceStore;
 import com.jhklim.investsim.adapter.out.upbit.dto.TradeTickData;
-import com.jhklim.investsim.application.dto.ExchangeMarketSearchCond;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
-import com.jhklim.investsim.application.port.in.StrategyUseCase;
 import com.jhklim.investsim.application.port.in.TradeUseCase;
+import com.jhklim.investsim.application.port.out.ActiveStrategyPort;
 import com.jhklim.investsim.domain.model.CandleData;
 import com.jhklim.investsim.domain.model.Exchange;
 import com.jhklim.investsim.domain.model.Strategy;
@@ -34,7 +33,7 @@ public class TickProcessor {
 
     private final CurrentPriceStore currentPriceStore;
     private final CandleStore candleStore;
-    private final StrategyUseCase strategyUseCase;
+    private final ActiveStrategyPort activeStrategyPort;
     private final TradeUseCase tradeUseCase;
     private final StrategyEvaluator strategyEvaluator;
 
@@ -42,8 +41,7 @@ public class TickProcessor {
         currentPriceStore.update(tick.getMarket(), tick.getTradePrice());
         List<CandleData> candles = candleStore.get(tick.getMarket());
 
-        ExchangeMarketSearchCond condition = new ExchangeMarketSearchCond(Exchange.UPBIT, tick.getMarket());
-        List<Strategy> activeStrategies = strategyUseCase.findActiveStrategiesByMarket(condition);
+        List<Strategy> activeStrategies = activeStrategyPort.findByMarket(Exchange.UPBIT, tick.getMarket());
 
         for (Strategy strategy : activeStrategies) {
             TradeSignal signal = strategyEvaluator.evaluate(strategy, candles);

@@ -35,4 +35,9 @@ public class StrategyPersistenceAdapter implements StrategyPort {
     public List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition) {
         return strategyRepository.findActiveStrategiesByMarket(condition);
     }
+
+    @Override
+    public List<Strategy> findAllActive() {
+        return strategyRepository.findAllByIsActiveTrue();
+    }
 }
