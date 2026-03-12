@@ -1,5 +1,7 @@
 package com.jhklim.investsim.domain.model;
 
+import com.jhklim.investsim.common.exception.BusinessException;
+import com.jhklim.investsim.common.exception.ErrorCode;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -47,7 +49,7 @@ public class Member extends BaseTimeEntity {
 
     public void deductBalance(BigDecimal amount) {
         if (this.balance.compareTo(amount) < 0) {
-            throw new IllegalStateException("잔고 부족");
+            throw new BusinessException(ErrorCode.INSUFFICIENT_BALANCE);
         }
         this.balance = this.balance.subtract(amount);
     }

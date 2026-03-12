@@ -2,6 +2,8 @@ package com.jhklim.investsim.application.service;
 
 import com.jhklim.investsim.application.port.in.TradeUseCase;
 import com.jhklim.investsim.application.port.out.TradePort;
+import com.jhklim.investsim.common.exception.BusinessException;
+import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.application.dto.TradeOrderRequest;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.PositionStatus;
@@ -37,7 +39,7 @@ public class TradeService implements TradeUseCase {
     @Transactional
     public void sell(Strategy strategy, BigDecimal currentPrice) {
         Trade trade = tradePort.findByStrategyIdAndPositionStatus(strategy.getId(), PositionStatus.OPEN)
-                .orElseThrow(() -> new IllegalStateException("매도할 포지션이 없습니다. strategyId=" + strategy.getId()));
+                .orElseThrow(() -> new BusinessException(ErrorCode.NO_OPEN_POSITION));
 
         BigDecimal returnAmount = trade.getOpenQuantity().multiply(currentPrice);
         trade.getMember().addBalance(returnAmount);

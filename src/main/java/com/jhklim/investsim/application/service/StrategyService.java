@@ -7,6 +7,8 @@ import com.jhklim.investsim.application.port.out.ActiveStrategyPort;
 import com.jhklim.investsim.application.port.out.CurrentPricePort;
 import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.application.port.out.StrategyPort;
+import com.jhklim.investsim.common.exception.BusinessException;
+import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.domain.model.*;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,7 @@ public class StrategyService implements StrategyUseCase {
     @Transactional
     public void create(Long memberId, CreateStrategyCommand command) {
         Member member = memberPort.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("회원이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         Strategy strategy = new Strategy(
                 member,
@@ -63,7 +65,7 @@ public class StrategyService implements StrategyUseCase {
     @Transactional
     public void activate(Long memberId, Long strategyId) {
         Strategy strategy = strategyPort.findById(strategyId)
-                .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.STRATEGY_NOT_FOUND));
 
         if (!strategy.getMember().getId().equals(memberId)) {
             throw new AccessDeniedException("해당 전략에 대한 권한이 없습니다.");
@@ -78,7 +80,7 @@ public class StrategyService implements StrategyUseCase {
     @Transactional
     public void deactivate(Long memberId, Long strategyId) {
         Strategy strategy = strategyPort.findById(strategyId)
-                .orElseThrow(() -> new IllegalArgumentException("전략이 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.STRATEGY_NOT_FOUND));
 
         if (!strategy.getMember().getId().equals(memberId)) {
             throw new AccessDeniedException("해당 전략에 대한 권한이 없습니다.");

@@ -4,6 +4,8 @@ import com.jhklim.investsim.adapter.in.auth.dto.LoginRequest;
 import com.jhklim.investsim.adapter.in.auth.dto.SignupRequest;
 import com.jhklim.investsim.adapter.in.auth.jwt.JwtTokenProvider;
 import com.jhklim.investsim.application.port.out.MemberPort;
+import com.jhklim.investsim.common.exception.BusinessException;
+import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import lombok.RequiredArgsConstructor;
@@ -20,7 +22,7 @@ public class AuthService {
 
     public void signup(SignupRequest request) {
         if (memberPort.existsByEmail(request.getEmail())) {
-            throw new IllegalArgumentException("이미 존재하는 이메일입니다.");
+            throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }
 
         Member member = new Member(
@@ -35,10 +37,10 @@ public class AuthService {
 
     public String login(LoginRequest request) {
         Member member = memberPort.findByEmail(request.getEmail())
-                .orElseThrow(() -> new IllegalArgumentException("해당 이메일에 대한 유저가 존재하지 않습니다."));
+                .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPassword())) {
-            throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+            throw new BusinessException(ErrorCode.INVALID_PASSWORD);
         }
 
         return jwtTokenProvider.createToken(
