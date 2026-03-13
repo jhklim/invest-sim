@@ -5,6 +5,7 @@
 ![Java](https://img.shields.io/badge/Java-17-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring_Boot-3.x-green)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-orange)
+![Redis](https://img.shields.io/badge/Redis-7.x-red)
 ![JWT](https://img.shields.io/badge/JWT-Auth-purple)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Upbit-red)
 ![Status](https://img.shields.io/badge/Status-In_Progress-yellow)
@@ -44,7 +45,8 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 | Framework | Spring Boot 3.x, Spring Data JPA, Spring Security |
 | Query | QueryDSL 5.x |
 | Database | MySQL 8.x (Docker), H2 (테스트) |
-| Auth | JWT (jjwt) |
+| Cache | Redis 7.x (Docker) |
+| Auth | JWT (jjwt) + Redis (Refresh Token) |
 | Real-time | WebSocket (Upbit API) |
 | Docs | Swagger (SpringDoc) |
 | Test | JUnit 5, H2 In-Memory |
@@ -193,7 +195,23 @@ public class StrategyService implements StrategyUseCase {
 | `IndicatorCalculator` | RSI / MA / VOLUME 지표 계산 |
 | `StrategyEvaluator` | 전략 조건 충족 여부 판단 |
 
-### 6. 전략 생명주기와 잔고 관리
+### 7. Refresh Token 인증 — Redis 기반 토큰 무효화
+
+JWT의 Stateless 특성으로 인해 서버에서 토큰을 무효화할 수 없는 문제를 Redis로 해결했습니다.
+
+- **Access Token**: 15분 단기 유효 (탈취 피해 최소화)
+- **Refresh Token**: UUID 기반, Redis에 TTL 7일로 저장
+- **로그아웃**: Redis에서 Refresh Token 삭제 → 이후 재발급 요청 시 401 반환
+- **Redis 선택 이유**: TTL 기능으로 만료 토큰 자동 삭제, 인메모리 조회로 빠른 응답
+
+```
+[로그인]  → Access Token (15분) + Refresh Token (Redis, 7일)
+[API 요청] → Access Token으로 인증
+[토큰 만료] → POST /api/auth/refresh → Redis 검증 → 새 Access Token 발급
+[로그아웃] → POST /api/auth/logout → Redis에서 Refresh Token 삭제
+```
+
+### 8. 전략 생명주기와 잔고 관리
 
 전략 활성화/비활성화 시 잔고 정합성을 보장하는 규칙을 적용합니다.
 
@@ -231,7 +249,9 @@ Member (1) ──── (N) Strategy (1) ──── (1) Trade
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
 | POST | `/api/auth/signup` | 회원가입 | 불필요 |
-| POST | `/api/auth/login` | 로그인 (JWT 발급) | 불필요 |
+| POST | `/api/auth/login` | 로그인 (Access Token + Refresh Token 발급) | 불필요 |
+| POST | `/api/auth/refresh` | Access Token 재발급 | 불필요 |
+| POST | `/api/auth/logout` | 로그아웃 (Refresh Token 무효화) | 불필요 |
 
 ### 전략 (`/api/strategies`)
 
