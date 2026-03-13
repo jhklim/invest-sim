@@ -1,6 +1,9 @@
 package com.jhklim.investsim.adapter.in.auth.controller;
 
 import com.jhklim.investsim.adapter.in.auth.dto.LoginRequest;
+import com.jhklim.investsim.adapter.in.auth.dto.LoginResponse;
+import com.jhklim.investsim.adapter.in.auth.dto.LogoutRequest;
+import com.jhklim.investsim.adapter.in.auth.dto.RefreshRequest;
 import com.jhklim.investsim.adapter.in.auth.dto.SignupRequest;
 import com.jhklim.investsim.adapter.in.auth.service.AuthService;
 import lombok.RequiredArgsConstructor;
@@ -26,8 +29,19 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<String> login(@Valid @RequestBody LoginRequest request) {
-        String token = authService.login(request);
-        return ResponseEntity.ok(token);
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        return ResponseEntity.ok(authService.login(request));
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<String> refresh(@Valid @RequestBody RefreshRequest request) {
+        String newAccessToken = authService.refresh(request.getMemberId(), request.getRefreshToken());
+        return ResponseEntity.ok(newAccessToken);
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Void> logout(@Valid @RequestBody LogoutRequest request) {
+        authService.logout(request.getMemberId());
+        return ResponseEntity.noContent().build();
     }
 }
