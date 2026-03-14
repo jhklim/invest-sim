@@ -2,6 +2,7 @@ package com.jhklim.investsim.application.service;
 
 import com.jhklim.investsim.adapter.out.persistence.jpa.MemberRepository;
 import com.jhklim.investsim.adapter.out.persistence.jpa.StrategyRepository;
+import com.jhklim.investsim.common.exception.BusinessException;
 import com.jhklim.investsim.domain.model.Exchange;
 import com.jhklim.investsim.domain.model.BuyStrategy;
 import com.jhklim.investsim.domain.model.Indicator;
@@ -61,8 +62,8 @@ class StrategyServiceTest {
 
         // when
         assertThatThrownBy(() -> strategyService.activate(member.getId(), strategy.getId()))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("잔고 부족");
+                .isInstanceOf(BusinessException.class)
+                .hasMessage("잔고가 부족합니다.");
 
         // then
         assertThat(member.getBalance()).isEqualByComparingTo(new BigDecimal("100000"));

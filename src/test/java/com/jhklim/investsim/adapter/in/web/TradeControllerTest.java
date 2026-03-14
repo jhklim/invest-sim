@@ -56,7 +56,8 @@ class TradeControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        return result.getResponse().getContentAsString();
+        return objectMapper.readTree(result.getResponse().getContentAsString())
+                .get("accessToken").asText();
     }
 
     @Test
