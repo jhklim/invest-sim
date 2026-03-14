@@ -61,11 +61,13 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 ```
 [인바운드 어댑터]                [애플리케이션]                   [아웃바운드 어댑터]
 
-StrategyController  ──→  StrategyUseCase (in port)
-TradeController     ──→  TradeUseCase (in port)         StrategyPort (out port)  ──→  StrategyPersistenceAdapter
-TickProcessor       ──→       ↓                    ──→  TradePort (out port)     ──→  TradePersistenceAdapter
-                       StrategyService                  MemberPort (out port)    ──→  MemberPersistenceAdapter
-                       TradeService                     CurrentPricePort         ──→  CurrentPriceStore
+StrategyController  ──>  StrategyUseCase (in port)
+TradeController     ──>  TradeUseCase (in port)         StrategyPort (out port)  ──>  StrategyPersistenceAdapter
+MemberController    ──>  MemberUseCase (in port)   ──>  TradePort (out port)     ──>  TradePersistenceAdapter
+TickProcessor       ──>       ↓                         MemberPort (out port)    ──>  MemberPersistenceAdapter
+                       StrategyService                  CurrentPricePort         ──>  CurrentPriceStore
+                       TradeService
+                       MemberService
 ```
 
 | 계층 | 패키지 | 역할 |
@@ -195,20 +197,21 @@ public class StrategyService implements StrategyUseCase {
 | `IndicatorCalculator` | RSI / MA / VOLUME 지표 계산 |
 | `StrategyEvaluator` | 전략 조건 충족 여부 판단 |
 
-### 7. Refresh Token 인증 — Redis 기반 토큰 무효화
+### 7. Refresh Token 인증 — Redis 기반 3중 보안
 
 JWT의 Stateless 특성으로 인해 서버에서 토큰을 무효화할 수 없는 문제를 Redis로 해결했습니다.
 
 - **Access Token**: 15분 단기 유효 (탈취 피해 최소화)
 - **Refresh Token**: UUID 기반, Redis에 TTL 7일로 저장
-- **로그아웃**: Redis에서 Refresh Token 삭제 → 이후 재발급 요청 시 401 반환
+- **Access Token 블랙리스트**: 로그아웃 시 잔여 TTL만큼 Redis에 등록 → 로그아웃 후 토큰 즉시 무효화
+- **Refresh Token Rotation**: 재발급 시 새 Refresh Token도 함께 발급, 기존 Refresh Token 즉시 폐기 → 탈취된 RT 재사용 차단
 - **Redis 선택 이유**: TTL 기능으로 만료 토큰 자동 삭제, 인메모리 조회로 빠른 응답
 
 ```
-[로그인]  → Access Token (15분) + Refresh Token (Redis, 7일)
-[API 요청] → Access Token으로 인증
-[토큰 만료] → POST /api/auth/refresh → Redis 검증 → 새 Access Token 발급
-[로그아웃] → POST /api/auth/logout → Redis에서 Refresh Token 삭제
+[로그인]    → Access Token (15분) + Refresh Token (Redis, 7일)
+[API 요청]  → Access Token으로 인증 + 블랙리스트 여부 확인
+[토큰 만료] → POST /api/auth/refresh → Redis 검증 → 새 Access Token + 새 Refresh Token 발급
+[로그아웃]  → Access Token 블랙리스트 등록 + Redis에서 Refresh Token 삭제
 ```
 
 ### 8. 전략 생명주기와 잔고 관리
@@ -250,8 +253,8 @@ Member (1) ──── (N) Strategy (1) ──── (1) Trade
 |--------|-----|------|------|
 | POST | `/api/auth/signup` | 회원가입 | 불필요 |
 | POST | `/api/auth/login` | 로그인 (Access Token + Refresh Token 발급) | 불필요 |
-| POST | `/api/auth/refresh` | Access Token 재발급 | 불필요 |
-| POST | `/api/auth/logout` | 로그아웃 (Refresh Token 무효화) | 불필요 |
+| POST | `/api/auth/refresh` | Access Token + Refresh Token 재발급 (Rotation) | 불필요 |
+| POST | `/api/auth/logout` | 로그아웃 (Access Token 블랙리스트 + Refresh Token 삭제) | 필요 |
 
 ### 전략 (`/api/strategies`)
 
@@ -261,6 +264,12 @@ Member (1) ──── (N) Strategy (1) ──── (1) Trade
 | GET | `/api/strategies` | 내 전략 목록 조회 | 필요 |
 | POST | `/api/strategies/{id}/activate` | 전략 활성화 (잔고 차감) | 필요 |
 | POST | `/api/strategies/{id}/deactivate` | 전략 비활성화 (잔고 환불) | 필요 |
+
+### 회원 (`/api/members`)
+
+| Method | URI | 설명 | 인증 |
+|--------|-----|------|------|
+| GET | `/api/members/me` | 내 정보 조회 (총 평가금액, 잔고, 주문가능금액, 전략예약금, OPEN 포지션 평가액) | 필요 |
 
 ### 거래 (`/api/trades`)
 
