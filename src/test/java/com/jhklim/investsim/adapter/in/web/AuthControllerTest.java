@@ -16,6 +16,7 @@ import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.Map;
 
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -122,13 +123,11 @@ class AuthControllerTest {
     void logout_thenRefresh_returns401() throws Exception {
         JsonNode tokens = signupAndLogin("logout_test@gmail.com", "password123");
         Long memberId = memberRepository.findByEmail("logout_test@gmail.com").get().getId();
+        String accessToken = tokens.get("accessToken").asText();
         String refreshToken = tokens.get("refreshToken").asText();
 
         mockMvc.perform(post("/api/auth/logout")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(Map.of(
-                                "memberId", memberId
-                        ))))
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isNoContent());
 
         mockMvc.perform(post("/api/auth/refresh")
@@ -137,6 +136,21 @@ class AuthControllerTest {
                                 "memberId", memberId,
                                 "refreshToken", refreshToken
                         ))))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("로그아웃 후 블랙리스트된 accessToken으로 API 호출 시 401을 반환한다")
+    void logout_thenAccessTokenBlacklisted_returns401() throws Exception {
+        JsonNode tokens = signupAndLogin("blacklist_test@gmail.com", "password123");
+        String accessToken = tokens.get("accessToken").asText();
+
+        mockMvc.perform(post("/api/auth/logout")
+                        .header("Authorization", "Bearer " + accessToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/trades")
+                        .header("Authorization", "Bearer " + accessToken))
                 .andExpect(status().isUnauthorized());
     }
 }

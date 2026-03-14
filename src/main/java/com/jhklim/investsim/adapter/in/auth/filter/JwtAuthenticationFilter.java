@@ -1,6 +1,7 @@
 package com.jhklim.investsim.adapter.in.auth.filter;
 
 import com.jhklim.investsim.adapter.in.auth.jwt.JwtTokenProvider;
+import com.jhklim.investsim.adapter.out.redis.AccessTokenBlacklist;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -20,6 +21,7 @@ import java.util.Collections;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final AccessTokenBlacklist accessTokenBlacklist;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,7 +35,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             String token = bearerToken.substring(7);
 
-            if (jwtTokenProvider.validateToken(token)) {
+            if (jwtTokenProvider.validateToken(token) && !accessTokenBlacklist.isBlacklisted(token)) {
 
                 Long memberId = jwtTokenProvider.getMemberId(token);
 

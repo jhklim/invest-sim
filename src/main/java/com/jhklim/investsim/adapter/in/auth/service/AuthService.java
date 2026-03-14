@@ -4,6 +4,7 @@ import com.jhklim.investsim.adapter.in.auth.dto.LoginRequest;
 import com.jhklim.investsim.adapter.in.auth.dto.LoginResponse;
 import com.jhklim.investsim.adapter.in.auth.dto.SignupRequest;
 import com.jhklim.investsim.adapter.in.auth.jwt.JwtTokenProvider;
+import com.jhklim.investsim.adapter.out.redis.AccessTokenBlacklist;
 import com.jhklim.investsim.adapter.out.redis.RefreshTokenStore;
 import com.jhklim.investsim.application.port.out.MemberPort;
 import com.jhklim.investsim.common.exception.BusinessException;
@@ -15,6 +16,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -27,6 +29,7 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenStore refreshTokenStore;
+    private final AccessTokenBlacklist accessTokenBlacklist;
 
     public void signup(SignupRequest request) {
         if (memberPort.existsByEmail(request.getEmail())) {
@@ -81,7 +84,14 @@ public class AuthService {
         );
     }
 
-    public void logout(Long memberId) {
+    public void logout(String accessToken) {
+        Long memberId = jwtTokenProvider.getMemberId(accessToken);
         refreshTokenStore.delete(memberId);
+
+        Date expiration = jwtTokenProvider.getExpiration(accessToken);
+        long remainingMillis = expiration.getTime() - System.currentTimeMillis();
+        if (remainingMillis > 0) {
+            accessTokenBlacklist.add(accessToken, Duration.ofMillis(remainingMillis));
+        }
     }
 }
