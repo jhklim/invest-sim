@@ -88,8 +88,8 @@ class AuthControllerTest {
     }
 
     @Test
-    @DisplayName("유효한 refreshToken으로 새 accessToken을 발급받는다")
-    void refresh_withValidToken_returnsNewAccessToken() throws Exception {
+    @DisplayName("유효한 refreshToken으로 새 accessToken과 새 refreshToken을 발급받는다")
+    void refresh_withValidToken_returnsNewTokens() throws Exception {
         JsonNode tokens = signupAndLogin("refresh_test@gmail.com", "password123");
         Long memberId = memberRepository.findByEmail("refresh_test@gmail.com").get().getId();
         String refreshToken = tokens.get("refreshToken").asText();
@@ -100,7 +100,34 @@ class AuthControllerTest {
                                 "memberId", memberId,
                                 "refreshToken", refreshToken
                         ))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.refreshToken").isNotEmpty());
+    }
+
+    @Test
+    @DisplayName("재발급 후 기존 refreshToken으로 재시도 시 401을 반환한다")
+    void refresh_withOldToken_returns401() throws Exception {
+        JsonNode tokens = signupAndLogin("rotation_test@gmail.com", "password123");
+        Long memberId = memberRepository.findByEmail("rotation_test@gmail.com").get().getId();
+        String oldRefreshToken = tokens.get("refreshToken").asText();
+
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "memberId", memberId,
+                                "refreshToken", oldRefreshToken
+                        ))))
                 .andExpect(status().isOk());
+
+        // 기존 RT로 재시도 → 이미 새 RT로 교체됐으므로 401
+        mockMvc.perform(post("/api/auth/refresh")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of(
+                                "memberId", memberId,
+                                "refreshToken", oldRefreshToken
+                        ))))
+                .andExpect(status().isUnauthorized());
     }
 
     @Test

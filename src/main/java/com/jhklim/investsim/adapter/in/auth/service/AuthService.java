@@ -66,7 +66,7 @@ public class AuthService {
         return new LoginResponse(accessToken, refreshToken);
     }
 
-    public String refresh(Long memberId, String refreshToken) {
+    public LoginResponse refresh(Long memberId, String refreshToken) {
         String stored = refreshTokenStore.find(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_REFRESH_TOKEN));
 
@@ -77,11 +77,16 @@ public class AuthService {
         Member member = memberPort.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        return jwtTokenProvider.createToken(
+        String newAccessToken = jwtTokenProvider.createToken(
                 member.getId(),
                 member.getEmail(),
                 member.getRole().name()
         );
+
+        String newRefreshToken = UUID.randomUUID().toString();
+        refreshTokenStore.save(memberId, newRefreshToken, REFRESH_TOKEN_TTL);
+
+        return new LoginResponse(newAccessToken, newRefreshToken);
     }
 
     public void logout(String accessToken) {
