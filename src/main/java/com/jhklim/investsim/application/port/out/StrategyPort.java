@@ -12,4 +12,5 @@ public interface StrategyPort {
     List<Strategy> findByMemberId(Long memberId);
     List<Strategy> findActiveStrategiesByMarket(ExchangeMarketSearchCond condition);
     List<Strategy> findAllActive();
+    long countByMemberId(Long memberId);
 }

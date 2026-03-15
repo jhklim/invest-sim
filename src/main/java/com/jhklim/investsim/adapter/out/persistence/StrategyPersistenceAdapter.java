@@ -40,4 +40,9 @@ public class StrategyPersistenceAdapter implements StrategyPort {
     public List<Strategy> findAllActive() {
         return strategyRepository.findAllByIsActiveTrue();
     }
+
+    @Override
+    public long countByMemberId(Long memberId) {
+        return strategyRepository.countByMemberId(memberId);
+    }
 }

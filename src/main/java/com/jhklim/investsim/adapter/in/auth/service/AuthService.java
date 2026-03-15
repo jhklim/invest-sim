@@ -12,6 +12,7 @@ import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -27,12 +28,19 @@ public class AuthService {
     private static final Duration REFRESH_TOKEN_TTL = Duration.ofDays(7);
 
     private final MemberPort memberPort;
+
+    @Value("${app.signup.max-members}")
+    private int maxMembers;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final RefreshTokenStore refreshTokenStore;
     private final AccessTokenBlacklist accessTokenBlacklist;
 
     public void signup(SignupRequest request) {
+        if (memberPort.count() >= maxMembers) {
+            throw new BusinessException(ErrorCode.SIGNUP_LIMIT_EXCEEDED);
+        }
+
         if (memberPort.existsByEmail(request.getEmail())) {
             throw new BusinessException(ErrorCode.DUPLICATE_EMAIL);
         }

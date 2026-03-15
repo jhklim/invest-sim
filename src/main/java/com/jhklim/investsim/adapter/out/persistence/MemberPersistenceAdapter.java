@@ -33,4 +33,9 @@ public class MemberPersistenceAdapter implements MemberPort {
     public Optional<Member> findByEmail(String email) {
         return memberRepository.findByEmail(email);
     }
+
+    @Override
+    public long count() {
+        return memberRepository.count();
+    }
 }

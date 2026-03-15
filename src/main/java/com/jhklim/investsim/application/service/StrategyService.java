@@ -7,6 +7,7 @@ import com.jhklim.investsim.application.port.out.*;
 import com.jhklim.investsim.common.exception.BusinessException;
 import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.domain.model.*;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +29,9 @@ public class StrategyService implements StrategyUseCase {
     private final ActiveStrategyPort activeStrategyPort;
     private final ActiveTradePort activeTradePort;
     private final TradePort tradePort;
+
+    @Value("${app.strategy.max-per-member}")
+    private int maxStrategiesPerMember;
 
     @EventListener(ApplicationReadyEvent.class)
     @Transactional
@@ -55,6 +59,10 @@ public class StrategyService implements StrategyUseCase {
 
     @Transactional
     public void create(Long memberId, CreateStrategyCommand command) {
+        if (strategyPort.countByMemberId(memberId) >= maxStrategiesPerMember) {
+            throw new BusinessException(ErrorCode.STRATEGY_LIMIT_EXCEEDED);
+        }
+
         Member member = memberPort.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 

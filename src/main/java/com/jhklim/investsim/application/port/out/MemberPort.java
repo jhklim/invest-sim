@@ -9,4 +9,5 @@ public interface MemberPort {
     Optional<Member> findById(Long id);
     Boolean existsByEmail(String email);
     Optional<Member> findByEmail(String email);
+    long count();
 }

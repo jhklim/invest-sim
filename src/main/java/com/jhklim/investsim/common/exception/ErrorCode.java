@@ -19,6 +19,10 @@ public enum ErrorCode {
     MEMBER_NOT_FOUND(404, "MEMBER_NOT_FOUND", "회원이 존재하지 않습니다."),
     STRATEGY_NOT_FOUND(404, "STRATEGY_NOT_FOUND", "전략이 존재하지 않습니다."),
 
+    // 403 Forbidden
+    SIGNUP_LIMIT_EXCEEDED(403, "SIGNUP_LIMIT_EXCEEDED", "회원가입 가능 인원을 초과했습니다."),
+    STRATEGY_LIMIT_EXCEEDED(403, "STRATEGY_LIMIT_EXCEEDED", "전략 생성 가능 개수를 초과했습니다."),
+
     // 409 Conflict
     DUPLICATE_EMAIL(409, "DUPLICATE_EMAIL", "이미 존재하는 이메일입니다."),
 
