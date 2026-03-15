@@ -10,6 +10,7 @@ import com.jhklim.investsim.common.exception.BusinessException;
 import com.jhklim.investsim.common.exception.ErrorCode;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.PositionStatus;
+import com.jhklim.investsim.domain.model.Strategy;
 import com.jhklim.investsim.domain.model.Trade;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -33,10 +34,10 @@ public class MemberService implements MemberUseCase {
         Member member = memberPort.findById(memberId)
                 .orElseThrow(() -> new BusinessException(ErrorCode.MEMBER_NOT_FOUND));
 
-        // 활성화됐지만 아직 매수 체결 전인 전략의 예약금 합산
+        // isActive=true 전략 = 매수 대기 중, buyAmount가 잔고에서 차감된 상태
         BigDecimal reservedAmount = strategyPort.findByMemberId(memberId).stream()
-                .filter(s -> s.isActive() && s.getTrade() == null)
-                .map(s -> s.getBuyAmount())
+                .filter(Strategy::isActive)
+                .map(Strategy::getBuyAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // OPEN 포지션 현재 평가액 합산
