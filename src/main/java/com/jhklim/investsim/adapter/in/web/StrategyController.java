@@ -63,4 +63,11 @@ public class StrategyController {
         strategyUseCase.deactivate(memberId, id);
         return ResponseEntity.ok().build();
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@AuthenticationPrincipal Long memberId,
+                                       @PathVariable Long id) {
+        strategyUseCase.delete(memberId, id);
+        return ResponseEntity.noContent().build();
+    }
 }
