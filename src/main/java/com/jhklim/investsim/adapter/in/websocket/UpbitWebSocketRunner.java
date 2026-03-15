@@ -6,6 +6,7 @@ import com.jhklim.investsim.domain.model.CandleData;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,14 +25,16 @@ public class UpbitWebSocketRunner {
     private final CandleStore candleStore;
     private final UpbitWebSocketClient webSocketClient;
 
-    private static final String MARKET = "KRW-BTC";
+    @Value("#{'${upbit.markets}'.split(',')}")
+    private List<String> markets;
 
     @PostConstruct
     public void start() {
-        List<CandleData> candles = upbitRestClient.getCandles(MARKET, 50);
-        candleStore.init(MARKET, candles);
-        log.info("초기 캔들 적재 완료 - {}개", candles.size());
-
+        for (String market : markets) {
+            List<CandleData> candles = upbitRestClient.getCandles(market, 50);
+            candleStore.init(market, candles);
+            log.info("초기 캔들 적재 완료 - {} {}개", market, candles.size());
+        }
         webSocketClient.connect();
     }
 }

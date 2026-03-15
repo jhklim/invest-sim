@@ -27,3 +27,6 @@ logging:
 jwt:
   secret: my-super-secret-key-my-super-secret-key-123456
   expiration: 900000
+
+upbit:
+  markets: KRW-BTC

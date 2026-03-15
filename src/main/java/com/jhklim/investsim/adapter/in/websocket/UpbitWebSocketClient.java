@@ -7,14 +7,17 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 /**
  * Upbit WebSocket 연결을 관리
@@ -30,7 +33,9 @@ public class UpbitWebSocketClient {
     private final ObjectMapper objectMapper;
     private final TickProcessor tickProcessor;
 
-    private static final String MARKET = "KRW-BTC";
+    @Value("#{'${upbit.markets}'.split(',')}")
+    private List<String> markets;
+
     private static final int MAX_RETRY_DELAY_SECONDS = 60;
 
     private WebSocketClient client;
@@ -70,9 +75,12 @@ public class UpbitWebSocketClient {
                 retryCount = 0; // 연결 성공 시 초기화
                 log.info("[WebSocket] 연결됨");
 
+                String codes = markets.stream()
+                        .map(m -> "\"" + m + "\"")
+                        .collect(Collectors.joining(","));
                 String subscribeMsg = "[" +
                         "{\"ticket\":\"investsim\"}," +
-                        "{\"type\":\"trade\", \"codes\":[\"" + MARKET + "\"]}]";
+                        "{\"type\":\"trade\", \"codes\":[" + codes + "]}]";
                 send(subscribeMsg);
             }
 
