@@ -30,3 +30,17 @@ jwt:
 
 upbit:
   markets: KRW-BTC
+
+admin:
+  email: ${ADMIN_EMAIL}
+  password: ${ADMIN_PASSWORD}
+
+test-account:
+  email: ${TEST_EMAIL}
+  password: ${TEST_PASSWORD}
+
+app:
+  signup:
+    max-members: ${SIGNUP_MAX_MEMBERS:50}
+  strategy:
+    max-per-member: ${STRATEGY_MAX_PER_MEMBER:5}
