@@ -54,18 +54,18 @@ class StrategyEvaluatorTest {
     /**
      * OPEN 포지션이 있는 전략 (VOLUME 매도 조건)
      */
-    private Strategy strategyWithVolumeSellConditionAndOpenTrade(double volumeThreshold) {
+    private Strategy strategyWithVolumeSellCondition(double volumeThreshold) {
         Strategy strategy = new Strategy(null, Exchange.UPBIT, "KRW-BTC", BigDecimal.valueOf(100000));
         SellStrategy sellCondition = new SellStrategy(strategy, Indicator.VOLUME, volumeThreshold);
         ReflectionTestUtils.setField(strategy, "buyStrategies", List.of());
         ReflectionTestUtils.setField(strategy, "sellStrategies", List.of(sellCondition));
+        return strategy;
+    }
 
+    private Trade openTrade(Strategy strategy) {
         Member member = new Member("test@gmail.com", "1234", Role.USER, "tester", BigDecimal.valueOf(1000000));
         TradeOrderRequest order = new TradeOrderRequest(BigDecimal.valueOf(50000), BigDecimal.valueOf(0.001));
-        Trade openTrade = new Trade(member, strategy, order);  // 생성자에서 PositionStatus.OPEN 설정됨
-        ReflectionTestUtils.setField(strategy, "trade", openTrade);
-
-        return strategy;
+        return new Trade(member, strategy, order);
     }
 
     // ──────────────── 매수 신호 ────────────────
@@ -74,9 +74,9 @@ class StrategyEvaluatorTest {
     @DisplayName("포지션 없고 VOLUME 조건 충족 → BUY")
     void evaluate_returnsBuy_whenNoTradeAndVolumeConditionMet() {
         Strategy strategy = strategyWithVolumeBuyCondition(50.0);
-        List<CandleData> candles = List.of(candle(1000, 100.0));  // volume 100 >= threshold 50
+        List<CandleData> candles = List.of(candle(1000, 100.0));
 
-        TradeSignal signal = evaluator.evaluate(strategy, candles);
+        TradeSignal signal = evaluator.evaluate(strategy, candles, null);
 
         assertThat(signal).isEqualTo(TradeSignal.BUY);
     }
@@ -85,9 +85,9 @@ class StrategyEvaluatorTest {
     @DisplayName("포지션 없고 VOLUME 조건 미충족 → HOLD")
     void evaluate_returnsHold_whenNoTradeAndVolumeConditionNotMet() {
         Strategy strategy = strategyWithVolumeBuyCondition(200.0);
-        List<CandleData> candles = List.of(candle(1000, 100.0));  // volume 100 < threshold 200
+        List<CandleData> candles = List.of(candle(1000, 100.0));
 
-        TradeSignal signal = evaluator.evaluate(strategy, candles);
+        TradeSignal signal = evaluator.evaluate(strategy, candles, null);
 
         assertThat(signal).isEqualTo(TradeSignal.HOLD);
     }
@@ -100,7 +100,7 @@ class StrategyEvaluatorTest {
         ReflectionTestUtils.setField(strategy, "sellStrategies", List.of());
         List<CandleData> candles = List.of(candle(1000, 100.0));
 
-        TradeSignal signal = evaluator.evaluate(strategy, candles);
+        TradeSignal signal = evaluator.evaluate(strategy, candles, null);
 
         assertThat(signal).isEqualTo(TradeSignal.HOLD);
     }
@@ -110,10 +110,11 @@ class StrategyEvaluatorTest {
     @Test
     @DisplayName("OPEN 포지션이고 VOLUME 조건 충족 → SELL")
     void evaluate_returnsSell_whenOpenTradeAndVolumeConditionMet() {
-        Strategy strategy = strategyWithVolumeSellConditionAndOpenTrade(50.0);
-        List<CandleData> candles = List.of(candle(1000, 100.0));  // volume 100 >= threshold 50
+        Strategy strategy = strategyWithVolumeSellCondition(50.0);
+        Trade trade = openTrade(strategy);
+        List<CandleData> candles = List.of(candle(1000, 100.0));
 
-        TradeSignal signal = evaluator.evaluate(strategy, candles);
+        TradeSignal signal = evaluator.evaluate(strategy, candles, trade);
 
         assertThat(signal).isEqualTo(TradeSignal.SELL);
     }
@@ -121,10 +122,11 @@ class StrategyEvaluatorTest {
     @Test
     @DisplayName("OPEN 포지션이고 VOLUME 조건 미충족 → HOLD")
     void evaluate_returnsHold_whenOpenTradeAndVolumeConditionNotMet() {
-        Strategy strategy = strategyWithVolumeSellConditionAndOpenTrade(200.0);
-        List<CandleData> candles = List.of(candle(1000, 100.0));  // volume 100 < threshold 200
+        Strategy strategy = strategyWithVolumeSellCondition(200.0);
+        Trade trade = openTrade(strategy);
+        List<CandleData> candles = List.of(candle(1000, 100.0));
 
-        TradeSignal signal = evaluator.evaluate(strategy, candles);
+        TradeSignal signal = evaluator.evaluate(strategy, candles, trade);
 
         assertThat(signal).isEqualTo(TradeSignal.HOLD);
     }
