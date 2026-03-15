@@ -67,6 +67,11 @@ tasks.named('test') {
 	useJUnitPlatform()
 }
 
+// plain JAR 생성 비활성화 (Docker 빌드 시 *.jar 중복 방지)
+jar {
+	enabled = false
+}
+
 clean {
 	delete file('src/main/generated')
 }
