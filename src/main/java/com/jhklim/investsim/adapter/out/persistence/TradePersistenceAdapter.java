@@ -30,4 +30,9 @@ public class TradePersistenceAdapter implements TradePort {
     public List<Trade> findByMemberId(Long memberId) {
         return tradeRepository.findByMemberId(memberId);
     }
+
+    @Override
+    public List<Trade> findAllByPositionStatus(PositionStatus status) {
+        return tradeRepository.findAllByPositionStatus(status);
+    }
 }

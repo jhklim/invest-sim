@@ -10,4 +10,7 @@ public interface StrategyUseCase {
     void create(Long memberId, CreateStrategyCommand command);
     void activate(Long memberId, Long strategyId);
     void deactivate(Long memberId, Long strategyId);
+    void delete(Long memberId, Long strategyId);
+    void deactivateAfterBuy(Long strategyId);   // isActive=false, 캐시 유지 (매도 감시 계속)
+    void autoDeactivateAfterSell(Long strategyId); // 캐시 제거 (완전 종료)
 }

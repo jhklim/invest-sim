@@ -13,4 +13,7 @@ public interface TradeRepository extends JpaRepository<Trade, Long> {
 
     @EntityGraph(attributePaths = {"strategy"})
     List<Trade> findByMemberId(Long memberId);
+
+    @EntityGraph(attributePaths = {"strategy", "strategy.member"})
+    List<Trade> findAllByPositionStatus(PositionStatus positionStatus);
 }

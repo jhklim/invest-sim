@@ -12,6 +12,7 @@ import com.jhklim.investsim.domain.model.Trade;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -25,8 +26,8 @@ public class TradeService implements TradeUseCase {
 
     private final TradePort tradePort;
 
-    @Transactional
-    public void buy(Strategy strategy, TradeOrderRequest order) {
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public Trade buy(Strategy strategy, TradeOrderRequest order) {
         Member member = strategy.getMember();
 
         Trade trade = new Trade(member, strategy, order);
@@ -34,9 +35,10 @@ public class TradeService implements TradeUseCase {
         log.info("[BUY] 전략: {} / 마켓: {} / 가격: {} / 수량: {}",
                 strategy.getName(), strategy.getMarket(),
                 order.getPrice(), order.getQuantity());
+        return trade;
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void sell(Strategy strategy, BigDecimal currentPrice) {
         Trade trade = tradePort.findByStrategyIdAndPositionStatus(strategy.getId(), PositionStatus.OPEN)
                 .orElseThrow(() -> new BusinessException(ErrorCode.NO_OPEN_POSITION));

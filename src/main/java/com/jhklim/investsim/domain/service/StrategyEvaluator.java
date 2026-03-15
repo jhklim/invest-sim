@@ -15,22 +15,16 @@ public class StrategyEvaluator {
 
     private final IndicatorCalculator indicatorCalculator;
 
-    public TradeSignal evaluate(Strategy strategy, List<CandleData> candles) {
-        Trade activeTrade = strategy.getTrade();
-
-        // 포지션 없으면 매수 조건만 체크
-        if (activeTrade == null || activeTrade.getPositionStatus().equals(PositionStatus.CLOSE)) {
+    public TradeSignal evaluate(Strategy strategy, List<CandleData> candles, Trade openTrade) {
+        if (openTrade == null) {
+            // 포지션 없음 → 매수 조건 체크
             boolean buySignal = checkAllBuyConditions(strategy.getBuyStrategies(), candles);
             return buySignal ? TradeSignal.BUY : TradeSignal.HOLD;
         }
 
-        // 포지션 있으면 매도 조건만 체크
-        if (activeTrade.getPositionStatus() == PositionStatus.OPEN) {
-            boolean sellSignal = checkAllSellConditions(strategy.getSellStrategies(), candles);
-            return sellSignal ? TradeSignal.SELL : TradeSignal.HOLD;
-        }
-
-        return TradeSignal.HOLD;
+        // 포지션 있음 → 매도 조건 체크
+        boolean sellSignal = checkAllSellConditions(strategy.getSellStrategies(), candles);
+        return sellSignal ? TradeSignal.SELL : TradeSignal.HOLD;
     }
 
     private boolean checkAllBuyConditions(List<BuyStrategy> buyStrategies, List<CandleData> candles) {

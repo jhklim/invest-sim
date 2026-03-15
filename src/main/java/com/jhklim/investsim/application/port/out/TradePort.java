@@ -10,4 +10,5 @@ public interface TradePort {
     Trade save(Trade trade);
     Optional<Trade> findByStrategyIdAndPositionStatus(Long strategyId, PositionStatus status);
     List<Trade> findByMemberId(Long memberId);
+    List<Trade> findAllByPositionStatus(PositionStatus status);
 }

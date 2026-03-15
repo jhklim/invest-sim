@@ -24,7 +24,6 @@ public class StrategyRepositoryImpl implements StrategyRepositoryCustom {
                 .select(strategy)
                 .from(strategy)
                 .join(strategy.member).fetchJoin()
-                .leftJoin(strategy.trade).fetchJoin()
                 .where(
                         strategy.isActive.eq(true),
                         exchangeEq(condition.getExchange()),
