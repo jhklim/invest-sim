@@ -6,14 +6,17 @@ import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
+@SQLRestriction("deleted_at IS NULL")
 public class Member extends BaseTimeEntity {
 
     @Id @GeneratedValue
@@ -40,11 +43,17 @@ public class Member extends BaseTimeEntity {
     @Version
     private int version; // 낙관적 락
 
+    private LocalDateTime deletedAt;
+
     @Column(precision = 30, scale = 8)
     private BigDecimal balance;
 
     public void addBalance(BigDecimal amount) {
         this.balance = this.balance.add(amount);
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     public void deductBalance(BigDecimal amount) {

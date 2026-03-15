@@ -8,6 +8,7 @@ import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 
 import static jakarta.persistence.EnumType.*;
 import static jakarta.persistence.FetchType.*;
@@ -40,12 +41,14 @@ public class Trade extends BaseTimeEntity {
     @Column(precision = 10, scale = 4)
     private BigDecimal profitRate;
 
-    @OneToOne(fetch = LAZY)
+    @ManyToOne(fetch = LAZY)
     @JoinColumn(name = "strategy_id")
     private Strategy strategy;
 
     @Enumerated(STRING)
     private PositionStatus positionStatus; // [OPEN, CLOSE]
+
+    private LocalDateTime closedAt;
 
     public void close(BigDecimal closeAmount) {
         BigDecimal openAmount = openPricePerShare.multiply(openQuantity);
@@ -56,7 +59,9 @@ public class Trade extends BaseTimeEntity {
                 .divide(openAmount, 8, RoundingMode.HALF_UP)
                 .multiply(BigDecimal.valueOf(100))
                 .setScale(4, RoundingMode.HALF_UP);
+        this.closedAt = LocalDateTime.now();
     }
+
 
     public Trade(Member member, Strategy strategy, TradeOrderRequest order) {
         this.member = member;

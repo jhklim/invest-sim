@@ -5,8 +5,10 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.hibernate.annotations.BatchSize;
+import org.hibernate.annotations.SQLRestriction;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -15,7 +17,8 @@ import static jakarta.persistence.EnumType.*;
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Strategy {
+@SQLRestriction("deleted_at IS NULL")
+public class Strategy extends BaseTimeEntity {
 
     @Id @GeneratedValue
     @Column(name = "strategy_id")
@@ -30,13 +33,12 @@ public class Strategy {
 
     private boolean isActive;
 
+    private LocalDateTime deletedAt;
+
     @Enumerated(STRING)
     private Exchange exchange;
 
     private String market;
-
-    @OneToOne(mappedBy = "strategy")
-    private Trade trade;
 
     @Column(precision = 30, scale = 8)
     private BigDecimal buyAmount;
@@ -55,6 +57,10 @@ public class Strategy {
 
     public void deactivate() {
         this.isActive = false;
+    }
+
+    public void delete() {
+        this.deletedAt = LocalDateTime.now();
     }
 
     public Strategy(Member member, Exchange exchange, String market, BigDecimal buyAmount) {
