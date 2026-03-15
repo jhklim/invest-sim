@@ -35,6 +35,8 @@ public class UpbitWebSocketClient {
 
     private WebSocketClient client;
 
+    private volatile boolean running = true;
+
     // onOpen(WebSocket 스레드)과 scheduleReconnect(scheduler 스레드)에서 동시에 접근하므로 가시성 보장을 위해 volatile 선언
     private volatile int retryCount = 0;
 
@@ -80,6 +82,7 @@ public class UpbitWebSocketClient {
 
             @Override
             public void onMessage(ByteBuffer bytes) {
+                if (!running) return;
                 String jsonString = StandardCharsets.UTF_8.decode(bytes).toString();
                 try {
                     TradeTickData tick = objectMapper.readValue(jsonString, TradeTickData.class);
@@ -91,6 +94,7 @@ public class UpbitWebSocketClient {
 
             @Override
             public void onClose(int code, String reason, boolean remote) {
+                if (!running) return; // 정상 종료 시 재연결 스킵
                 log.warn("[WebSocket] 연결 종료 - code: {}, reason: {}", code, reason);
                 scheduleReconnect();
             }
@@ -102,11 +106,13 @@ public class UpbitWebSocketClient {
         };
     }
 
-    // 앱 종료 시 scheduler 스레드를 정리
-    // @PreDestroy: Spring 컨테이너가 Bean을 소멸시키기 전에 호출되는 메서드
     @PreDestroy
     public void shutdown() {
-        log.info("[WebSocket] scheduler 종료");
+        log.info("[WebSocket] 종료");
+        running = false; // 틱 수신/재연결 차단
+        if (client != null && !client.isClosed()) {
+            client.close();
+        }
         scheduler.shutdown();
     }
 }
