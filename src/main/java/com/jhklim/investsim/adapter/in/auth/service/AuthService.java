@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.Date;
 import java.util.UUID;
@@ -40,7 +41,8 @@ public class AuthService {
                 request.getEmail(),
                 passwordEncoder.encode(request.getPassword()),
                 Role.USER,
-                request.getNickname()
+                request.getNickname(),
+                new BigDecimal("100000")
         );
 
         memberPort.save(member);

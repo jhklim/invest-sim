@@ -1,6 +1,7 @@
 package com.jhklim.investsim.config.init;
 
 import com.jhklim.investsim.application.port.out.MemberPort;
+import java.math.BigDecimal;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import jakarta.annotation.PostConstruct;
@@ -23,7 +24,8 @@ public class AdminInitializer {
                     "admin@gmail.com",
                     passwordEncoder.encode("admin123"),
                     Role.ADMIN,
-                    "admin"
+                    "admin",
+                    new BigDecimal("1000000")
             );
 
             memberPort.save(admin);
