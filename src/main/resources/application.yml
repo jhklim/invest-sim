@@ -25,7 +25,7 @@ logging:
     com.jhklim.investsim.adapter.in.websocket.TickProcessor: warn
 
 jwt:
-  secret: my-super-secret-key-my-super-secret-key-123456
+  secret: ${JWT_SECRET}
   expiration: 900000
 
 upbit:
