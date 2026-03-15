@@ -35,3 +35,10 @@ out/
 
 ### VS Code ###
 .vscode/
+/node_modules/
+/CLAUDE.md
+/package.json
+/package-lock.json
+
+### Environment ###
+.env
