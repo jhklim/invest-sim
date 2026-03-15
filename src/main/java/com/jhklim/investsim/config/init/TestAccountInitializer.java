@@ -1,7 +1,6 @@
 package com.jhklim.investsim.config.init;
 
 import com.jhklim.investsim.application.port.out.MemberPort;
-import java.math.BigDecimal;
 import com.jhklim.investsim.domain.model.Member;
 import com.jhklim.investsim.domain.model.Role;
 import jakarta.annotation.PostConstruct;
@@ -10,30 +9,32 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
+import java.math.BigDecimal;
+
 @Component
 @RequiredArgsConstructor
-public class AdminInitializer {
+public class TestAccountInitializer {
 
     private final MemberPort memberPort;
     private final PasswordEncoder passwordEncoder;
 
-    @Value("${admin.email}")
-    private String adminEmail;
+    @Value("${test-account.email}")
+    private String email;
 
-    @Value("${admin.password}")
-    private String adminPassword;
+    @Value("${test-account.password}")
+    private String password;
 
     @PostConstruct
-    private void initAdmin() {
-        if (!memberPort.existsByEmail(adminEmail)) {
-            Member admin = new Member(
-                    adminEmail,
-                    passwordEncoder.encode(adminPassword),
-                    Role.ADMIN,
-                    "admin",
-                    new BigDecimal("1000000")
+    private void initTestAccount() {
+        if (!memberPort.existsByEmail(email)) {
+            Member testUser = new Member(
+                    email,
+                    passwordEncoder.encode(password),
+                    Role.USER,
+                    "tester",
+                    new BigDecimal("100000")
             );
-            memberPort.save(admin);
+            memberPort.save(testUser);
         }
     }
 }
