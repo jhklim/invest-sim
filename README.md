@@ -8,7 +8,9 @@
 ![Redis](https://img.shields.io/badge/Redis-7.x-red)
 ![JWT](https://img.shields.io/badge/JWT-Auth-purple)
 ![WebSocket](https://img.shields.io/badge/WebSocket-Upbit-red)
-![Status](https://img.shields.io/badge/Status-In_Progress-yellow)
+![Docker](https://img.shields.io/badge/Docker-Compose-blue)
+![AWS](https://img.shields.io/badge/AWS-EC2%20%7C%20S3%20%7C%20CloudFront-orange)
+![Status](https://img.shields.io/badge/Status-Deployed-brightgreen)
 
 ---
 
@@ -50,6 +52,7 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 | Real-time | WebSocket (Upbit API) |
 | Docs | Swagger (SpringDoc) |
 | Test | JUnit 5, H2 In-Memory |
+| Infra | AWS EC2 (t3.micro), S3, CloudFront, Docker Compose, Nginx, Let's Encrypt |
 | Tools | IntelliJ IDEA, DBeaver, Gradle |
 
 ---
@@ -291,8 +294,6 @@ Member (1) ──── (N) Strategy (1) ──── (N) Trade
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
 | GET | `/api/trades` | 내 거래 내역 조회 | 필요 |
-
-> Swagger UI: `http://localhost:8080/swagger-ui/index.html`
 
 ## 📬 Contact
 - GitHub: [github.com/jhklim](https://github.com/jhklim)
