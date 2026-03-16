@@ -165,14 +165,16 @@ TickProcessor       ──>       ↓                         MemberPort (out po
 
 ### 1. N+1 문제 해결 — @EntityGraph / @BatchSize 적용
 
-**Trade 조회** (`GET /api/trades`): Trade → Strategy 관계에서 `@EntityGraph`로 fetch join 처리
+**문제**: 연관 엔티티를 지연 로딩하면 Trade/Strategy 목록 조회 시 레코드 수만큼 추가 쿼리 발생
+
+**Trade 조회** (`GET /api/trades`): Trade → Strategy 관계를 `@EntityGraph`로 fetch join 처리 → 쿼리 1회로 해결
 
 ```java
 @EntityGraph(attributePaths = {"strategy"})
 List<Trade> findByMemberId(Long memberId);
 ```
 
-**Strategy 조회** (`GET /api/strategies`): Strategy → BuyStrategy, SellStrategy 두 컬렉션을 동시에 fetch join하면 `MultipleBagFetchException`이 발생하므로 `@BatchSize`로 IN 쿼리 일괄 처리
+**Strategy 조회** (`GET /api/strategies`): BuyStrategy, SellStrategy 두 컬렉션을 동시에 fetch join하면 Hibernate가 `MultipleBagFetchException`을 던짐 → `@BatchSize`로 IN 쿼리 일괄 처리
 
 ```java
 @BatchSize(size = 100)
@@ -182,8 +184,9 @@ private List<BuyStrategy> buyStrategies = new ArrayList<>();
 
 ### 2. QueryDSL 동적 쿼리 — 활성 전략 조회
 
-매 체결 틱마다 거래소와 마켓 조건으로 활성 전략을 조회합니다.
-`BooleanExpression`을 조합해 조건이 null이면 자동으로 해당 조건을 제외합니다.
+**문제**: 매 체결 틱마다 거래소·마켓 조건으로 활성 전략을 조회하는데, 조건이 null인 경우 정적 JPQL로는 처리가 번거롭고 조건 누락 위험
+
+**해결**: `BooleanExpression`을 조합해 null 조건은 자동 제외. 조건이 늘어나도 메서드 추가만으로 확장 가능
 
 ```java
 private BooleanExpression exchangeEq(Exchange exchange) {
@@ -193,8 +196,9 @@ private BooleanExpression exchangeEq(Exchange exchange) {
 
 ### 3. 낙관적 락 (Optimistic Lock) — 동시 매수 충돌 방지
 
-여러 전략이 동시에 같은 멤버의 잔고를 차감하려 할 때 `@Version`으로 충돌을 감지합니다.
-`ObjectOptimisticLockingFailureException` 발생 시 해당 매수 시도만 스킵하고 나머지는 정상 처리합니다.
+**문제**: 여러 전략이 동시에 같은 멤버의 잔고를 차감하면 Race Condition으로 잔고가 마이너스가 될 수 있음
+
+**해결**: `Member` 엔티티에 `@Version` 적용 → 동시에 두 트랜잭션이 잔고를 수정하면 나중에 커밋되는 쪽에서 `ObjectOptimisticLockingFailureException` 발생 → 해당 매수만 스킵, 나머지는 정상 처리
 
 ```java
 @Version
@@ -203,8 +207,9 @@ private Long version;  // Member 엔티티
 
 ### 4. In-Memory 실시간 데이터 처리
 
-캔들 데이터와 현재가를 DB 대신 `ConcurrentHashMap` 기반 메모리 저장소에서 관리합니다.
-매 체결 틱마다 DB를 조회하는 대신 메모리에서 즉시 읽어 지표를 계산하고, 매매 신호 발생 시에만 DB에 기록합니다.
+**문제**: 초당 수십 건의 체결 틱이 들어올 때 매번 DB에서 캔들·현재가를 조회하면 응답 지연 및 DB 부하 발생
+
+**해결**: `ConcurrentHashMap` 기반 메모리 저장소에서 즉시 읽어 지표를 계산하고, 매매 신호 발생 시에만 DB에 기록
 
 | 저장소 | 역할 |
 |--------|------|
@@ -215,10 +220,12 @@ private Long version;  // Member 엔티티
 
 ### 5. 헥사고날 아키텍처 — 의존성 역전으로 계층 분리
 
-Application 계층이 외부 어댑터(웹, DB)를 직접 알지 못하도록 포트(인터페이스)로 추상화합니다.
+**문제**: 계층 간 직접 의존 시 DB 변경, 프레임워크 교체가 전 계층에 영향. 테스트 시 외부 인프라 없이 Application 로직만 검증하기 어려움
 
-- **인바운드 포트 (UseCase)**: Controller / TickProcessor가 Service 구현체 대신 `StrategyUseCase`, `TradeUseCase` 인터페이스에 의존
-- **아웃바운드 포트**: Service가 JPA Repository 대신 `StrategyPort`, `TradePort` 등 인터페이스에 의존. 실제 JPA 구현은 `PersistenceAdapter`가 담당
+**해결**: Application 계층은 포트(인터페이스)만 알고, 실제 구현(JPA, WebSocket)은 어댑터가 담당
+
+- **인바운드 포트 (UseCase)**: Controller / TickProcessor → `StrategyUseCase`, `TradeUseCase` 인터페이스에 의존
+- **아웃바운드 포트**: Service → `StrategyPort`, `TradePort` 인터페이스에 의존. JPA 구현은 `PersistenceAdapter`가 담당
 
 ```java
 // Service는 포트(인터페이스)만 알고, 구현체(JPA)는 모름
@@ -230,7 +237,9 @@ public class StrategyService implements StrategyUseCase {
 
 ### 6. 단일 책임 원칙 (SRP) — WebSocket 컴포넌트 분리
 
-초기에는 하나의 클래스가 WebSocket 연결, 재연결, 틱 처리를 모두 담당했으나 책임이 집중되어 분리했습니다.
+**문제**: 초기 `UpbitWebSocketRunner` 하나가 WebSocket 연결, 재연결, 틱 처리, 전략 평가를 모두 담당 → 클래스 비대화, 변경 시 사이드 이펙트 위험
+
+**해결**: 책임 단위로 분리
 
 | 클래스 | 책임 |
 |--------|------|
@@ -242,12 +251,12 @@ public class StrategyService implements StrategyUseCase {
 
 ### 7. Refresh Token 인증 — Redis 기반 3중 보안
 
-JWT의 Stateless 특성으로 인해 서버에서 토큰을 무효화할 수 없는 문제를 Redis로 해결했습니다.
+**문제**: JWT는 Stateless라 서버에서 토큰을 무효화할 수 없음 → 로그아웃 후에도 만료 전 Access Token으로 API 호출 가능, Refresh Token 탈취 시 재사용 가능
 
-- **Access Token**: 15분 단기 유효 (탈취 피해 최소화)
-- **Refresh Token**: UUID 기반, Redis에 TTL 7일로 저장
-- **Access Token 블랙리스트**: 로그아웃 시 잔여 TTL만큼 Redis에 등록 → 로그아웃 후 토큰 즉시 무효화
-- **Refresh Token Rotation**: 재발급 시 새 Refresh Token도 함께 발급, 기존 Refresh Token 즉시 폐기 → 탈취된 RT 재사용 차단
+**해결**: Redis를 활용한 3중 보안 구조
+
+- **Access Token 블랙리스트**: 로그아웃 시 잔여 TTL만큼 Redis에 등록 → 즉시 무효화
+- **Refresh Token Rotation**: 재발급 시 새 RT 발급 + 기존 RT 즉시 폐기 → 탈취된 RT 재사용 차단
 - **Redis 선택 이유**: TTL 기능으로 만료 토큰 자동 삭제, 인메모리 조회로 빠른 응답
 
 ```
@@ -307,31 +316,33 @@ Member (1) ──── (N) Strategy (1) ──── (N) Trade
 
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
-| POST | `/api/auth/signup` | 회원가입 | 불필요 |
-| POST | `/api/auth/login` | 로그인 (Access Token + Refresh Token 발급) | 불필요 |
-| POST | `/api/auth/refresh` | Access Token + Refresh Token 재발급 (Rotation) | 불필요 |
-| POST | `/api/auth/logout` | 로그아웃 (Access Token 블랙리스트 + Refresh Token 삭제) | 필요 |
+| POST | `/api/auth/signup` | 회원가입 | ❌ |
+| POST | `/api/auth/login` | 로그인 | ❌ |
+| POST | `/api/auth/refresh` | Access/Refresh Token 재발급 (Rotation) | ❌ |
+| POST | `/api/auth/logout` | 로그아웃 | ✅ |
 
 ### 전략 (`/api/strategies`)
 
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
-| POST | `/api/strategies` | 전략 생성 | 필요 |
-| GET | `/api/strategies` | 내 전략 목록 조회 | 필요 |
-| POST | `/api/strategies/{id}/activate` | 전략 활성화 (잔고 차감) | 필요 |
-| POST | `/api/strategies/{id}/deactivate` | 전략 비활성화 (잔고 환불) | 필요 |
+| POST | `/api/strategies` | 전략 생성 | ✅ |
+| GET | `/api/strategies` | 내 전략 목록 조회 | ✅ |
+| POST | `/api/strategies/{id}/activate` | 전략 활성화 (잔고 차감) | ✅ |
+| POST | `/api/strategies/{id}/deactivate` | 전략 비활성화 (잔고 환불) | ✅ |
 
 ### 회원 (`/api/members`)
 
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
-| GET | `/api/members/me` | 내 정보 조회 (총 평가금액, 잔고, 주문가능금액, 전략예약금, OPEN 포지션 평가액) | 필요 |
+| GET | `/api/members/me` | 내 정보 조회 (잔고, 평가금액, 예약금, OPEN 포지션) | ✅ |
 
 ### 거래 (`/api/trades`)
 
 | Method | URI | 설명 | 인증 |
 |--------|-----|------|------|
-| GET | `/api/trades` | 내 거래 내역 조회 | 필요 |
+| GET | `/api/trades` | 내 거래 내역 조회 | ✅ |
+
+---
 
 ## 📬 Contact
 - GitHub: [github.com/jhklim](https://github.com/jhklim)
