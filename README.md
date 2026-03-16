@@ -18,7 +18,7 @@
 
 | 서비스 | URL |
 |--------|-----|
-| 프론트엔드 | https://d2xct30b72j3dd.cloudfront.net |
+| InvestSim | https://d2xct30b72j3dd.cloudfront.net |
 
 > **테스트 계정**: `test@gmail.com` / `test1357`
 
