@@ -72,9 +72,9 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 ```
 사용자
  │
- ├──→ CloudFront ──→ S3 (React 빌드 파일)
+ ├──> CloudFront ──> S3 (React 빌드 파일)
  │
- └──→ Nginx (EC2 t3.micro, Ubuntu)
+ └──> Nginx (EC2 t3.micro, Ubuntu)
           │  HTTPS / Let's Encrypt
           ▼
      Spring Boot (Docker)
@@ -106,7 +106,7 @@ StrategyController  ──>  StrategyUseCase (in port)
 TradeController     ──>  TradeUseCase (in port)         StrategyPort (out port)  ──>  StrategyPersistenceAdapter
 MemberController    ──>  MemberUseCase (in port)   ──>  TradePort (out port)     ──>  TradePersistenceAdapter
 TickProcessor       ──>       ↓                         MemberPort (out port)    ──>  MemberPersistenceAdapter
-                         StrategyService                  CurrentPricePort         ──>  CurrentPriceStore
+                         StrategyService                CurrentPricePort         ──>  CurrentPriceStore
                          TradeService
                          MemberService
 ```
