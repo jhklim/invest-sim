@@ -67,6 +67,34 @@ InvestSim은 업비트(Upbit) 거래소의 실시간 체결 데이터를 WebSock
 
 ---
 
+## ☁️ 배포 구조
+
+```
+사용자
+ │
+ ├──→ CloudFront ──→ S3 (React 빌드 파일)
+ │
+ └──→ Nginx (EC2 t3.micro, Ubuntu)
+          │  HTTPS / Let's Encrypt
+          ▼
+     Spring Boot (Docker)
+          │
+          ├─ MySQL 8 (Docker)
+          └─ Redis 7 (Docker)
+```
+
+| 구성 요소 | 역할 |
+|-----------|------|
+| AWS EC2 (t3.micro) | Spring Boot 애플리케이션 서버 |
+| Docker Compose | MySQL, Redis, Spring Boot 컨테이너 통합 관리 |
+| Nginx | 리버스 프록시, HTTPS 처리 |
+| Let's Encrypt | 무료 SSL 인증서 자동 발급/갱신 |
+| AWS S3 | React 정적 빌드 파일 호스팅 |
+| AWS CloudFront | CDN, HTTPS 적용 |
+| DuckDNS | 무료 도메인 (`investsim.duckdns.org`) |
+
+---
+
 ## 🏗 아키텍처
 
 **헥사고날 아키텍처 (Ports & Adapters)** 를 적용해 Application 계층이 외부(웹, DB, WebSocket)에 의존하지 않도록 설계했습니다.
@@ -78,9 +106,9 @@ StrategyController  ──>  StrategyUseCase (in port)
 TradeController     ──>  TradeUseCase (in port)         StrategyPort (out port)  ──>  StrategyPersistenceAdapter
 MemberController    ──>  MemberUseCase (in port)   ──>  TradePort (out port)     ──>  TradePersistenceAdapter
 TickProcessor       ──>       ↓                         MemberPort (out port)    ──>  MemberPersistenceAdapter
-                       StrategyService                  CurrentPricePort         ──>  CurrentPriceStore
-                       TradeService
-                       MemberService
+                         StrategyService                  CurrentPricePort         ──>  CurrentPriceStore
+                         TradeService
+                         MemberService
 ```
 
 | 계층 | 패키지 | 역할 |
