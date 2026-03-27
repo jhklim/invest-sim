@@ -18,3 +18,11 @@ logging.level:
 jwt:
   secret: my-super-secret-key-my-super-secret-key-123456
   expiration: 3600000
+
+admin:
+  email: admin@test.com
+  password: adminpass123
+
+test-account:
+  email: test@test.com
+  password: testpass123
