@@ -26,3 +26,15 @@ admin:
 test-account:
   email: test@test.com
   password: testpass123
+
+app:
+  signup:
+    max-members: 50
+  strategy:
+    max-per-member: 5
+
+cors:
+  allowed-origins: http://localhost:5173
+
+upbit:
+  markets: KRW-BTC
